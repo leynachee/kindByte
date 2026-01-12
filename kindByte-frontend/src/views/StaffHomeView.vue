@@ -1,9 +1,16 @@
+<template>
+  <div class="staff-home">
+    <h1>Staff Dashboard</h1>
+    <p>Manage activities, attendance, and registrations.</p>
+  </div>
+</template>
+
 <script setup>
-import StaffHome from '../components/StaffHome.vue'
+// staff dashboard logic goes here
 </script>
 
-<template>
-  <main>
-    <StaffHome />
-  </main>
-</template>
+<style scoped>
+.staff-home {
+  padding: 2rem;
+}
+</style>
