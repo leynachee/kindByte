@@ -45,6 +45,16 @@ git branch
 
 ## 5. Install Dependencies
 
+Navigate to Frontend or Backend project folder:
+
+```bash
+cd kindByte-frontend
+```
+or
+```bash
+cd kindByte-backend
+```
+
 Install all required packages:
 
 ```bash
