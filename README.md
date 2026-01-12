@@ -97,14 +97,6 @@ Commit and push your changes regularly:
 ```bash
 git add .
 git commit -m "Describe your changes"
-git push origin <your-branch-name>
-```
-
-## 8. Pull the latest updates from the main branch before creating a pull request:
-
-```bash
-git checkout main
 git pull origin main
-git checkout <your-branch-name>
-git merge main
+git push origin <your-branch-name>
 ```
