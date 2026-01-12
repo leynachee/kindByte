@@ -26,8 +26,7 @@ git clone <repo-url>
 ## 3. Navigate into the project folder:
 
 ```bash
-cd zesty-frontend
-cd zesty
+cd kindByte
 ```
 
 ## 4. Create a New Branch
