@@ -59,63 +59,90 @@
 </template>
 
 <script setup>
-import { reactive, ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { authStore } from '@/authStore'
-
-const router = useRouter()
-
-const name = ref('')
-const email = ref('')
-const role = ref('beneficiary')
-const password = ref('')
-const confirmPassword = ref('')
-const errors = reactive({ name: '', email: '', confirmPassword: '' })
-
-// LIVE REQUIREMENTS CHECK
-const requirements = computed(() => {
-  return {
-    length: password.value.length >= 8,
-    capital: /[A-Z]/.test(password.value),
-    special: /[!@#$%^&*(),.?":{}|<>]/.test(password.value)
-  }
-})
-
-const isFormValid = computed(() => {
-  return (
-    requirements.value.length &&
-    requirements.value.capital &&
-    requirements.value.special &&
-    password.value === confirmPassword.value &&
-    name.value.trim() !== ''
-  )
-})
-
-function handleSignup() {
-  errors.name = ''
-  errors.email = ''
-  errors.confirmPassword = ''
-
-  // Final Validation
-  if (password.value !== confirmPassword.value) {
-    errors.confirmPassword = 'Passwords do not match'
-    return
-  }
-
-  // Update Store & Link to App
-  authStore.login({
-    name: name.value,
-    email: email.value,
-    role: role.value
+  import { reactive, ref, computed } from 'vue'
+  import { useRouter } from 'vue-router'
+  import { authStore } from '@/authStore'
+  // 1. Import Firebase tools
+  import { auth, db } from '@/firebase'
+  import { createUserWithEmailAndPassword } from 'firebase/auth'
+  import { doc, setDoc } from 'firebase/firestore'
+  
+  const router = useRouter()
+  
+  const name = ref('')
+  const email = ref('')
+  const role = ref('beneficiary')
+  const password = ref('')
+  const confirmPassword = ref('')
+  const isSubmitting = ref(false) // State to prevent double-clicks
+  const errors = reactive({ name: '', email: '', confirmPassword: '', firebase: '' })
+  
+  const requirements = computed(() => {
+    return {
+      length: password.value.length >= 8,
+      capital: /[A-Z]/.test(password.value),
+      special: /[!@#$%^&*(),.?":{}|<>]/.test(password.value)
+    }
+  })
+  
+  const isFormValid = computed(() => {
+    return (
+      requirements.value.length &&
+      requirements.value.capital &&
+      requirements.value.special &&
+      password.value === confirmPassword.value &&
+      name.value.trim() !== '' &&
+      !isSubmitting.value
+    )
   })
 
-  alert('Account created successfully!')
+async function handleSignup() {
+  // Reset previous errors
+  errors.name = '';
+  errors.email = '';
+  errors.confirmPassword = '';
   
-  // Direct them to their specific home immediately
-  const target = role.value === 'staff' ? 'StaffHome' : role.value === 'volunteer' ? 'VolunteerHome' : 'UserHome'
-  router.push({ name: target })
+  try {
+    // 1. Create the user in Firebase Authentication
+    const userCredential = await createUserWithEmailAndPassword(
+      auth, 
+      email.value, 
+      password.value
+    );
+    const user = userCredential.user;
+
+    // 2. CAPTURE & SAVE ROLE: Create a document in the 'users' collection
+    // We use the unique UID from Authentication as the document ID
+    await setDoc(doc(db, "users", user.uid), {
+      fullName: name.value,
+      email: email.value,
+      role: role.value, // This captures 'beneficiary', 'volunteer', or 'staff'
+      createdAt: new Date()
+    });
+
+    // 3. Update local store and redirect
+    authStore.login({
+      name: name.value,
+      email: email.value,
+      role: role.value,
+      uid: user.uid
+    });
+
+    // Redirect to the appropriate dashboard
+    const target = role.value === 'staff' ? 'StaffHome' : 
+                   role.value === 'volunteer' ? 'VolunteerHome' : 'UserHome';
+    router.push({ name: target });
+
+  } catch (error) {
+    console.error("Signup error:", error.code);
+    if (error.code === 'auth/email-already-in-use') {
+      errors.email = 'This email is already in use.';
+    } else {
+      errors.email = 'Failed to create account. Please try again.';
+    }
+  }
 }
-</script>
+  </script>
 
 <style scoped>
 * {

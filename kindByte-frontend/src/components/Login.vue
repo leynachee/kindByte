@@ -10,15 +10,6 @@
 
       <form @submit.prevent="handleLogin">
         <div class="input-group">
-          <label for="role">I am a...</label>
-          <select id="role" v-model="role" class="role-select">
-            <option value="beneficiary">Beneficiary</option>
-            <option value="volunteer">Volunteer</option>
-            <option value="staff">Staff</option>
-          </select>
-        </div>
-
-        <div class="input-group">
           <label for="email">Email Address</label>
           <input 
             type="email" 
@@ -46,7 +37,9 @@
           <RouterLink :to="{ name: 'ForgotPassword' }">Forgot password?</RouterLink>
         </div>
 
-        <button type="submit" class="btn">Log in</button>
+        <button type="submit" class="btn" :disabled="isSubmitting">
+          {{ isSubmitting ? 'Logging in...' : 'Log in' }}
+        </button>
 
         <div class="switch-text">
           Don’t have an account?
@@ -61,44 +54,62 @@
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { authStore } from '@/authStore' 
+import { auth, db } from '@/firebase'
+import { signInWithEmailAndPassword } from 'firebase/auth'
+import { doc, getDoc } from 'firebase/firestore'
 
 const router = useRouter()
-
 const email = ref('')
 const password = ref('')
-const role = ref('beneficiary')
+const isSubmitting = ref(false)
 const errors = reactive({ email: '', password: '' })
-
-// Simple Email Validation Helper
-const isValidEmail = (val) => {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)
-}
 
 async function handleLogin() {
   errors.email = ''
   errors.password = ''
+  isSubmitting.value = true
 
-  // 1. Validation
-  if (!isValidEmail(email.value)) {
-    errors.email = 'Please enter a valid email address'
-    return
-  }
+  try {
+    // 1. Authenticate with Firebase
+    const userCredential = await signInWithEmailAndPassword(auth, email.value, password.value)
+    const user = userCredential.user
 
-  // 2. Update the Global Store 
-  // We store the email here so other pages (like Profile) can show it
-  authStore.login({
-    email: email.value,
-    role: role.value,
-    displayName: email.value.split('@')[0] // Temporary name from email
-  })
+    // 2. Fetch the assigned role from Firestore
+    const userDoc = await getDoc(doc(db, 'users', user.uid))
+    
+    if (userDoc.exists()) {
+      const userData = userDoc.data()
+      
+      // Update global store with the role from database
+      authStore.login({
+        email: user.email,
+        role: userData.role,
+        name: userData.fullName,
+        uid: user.uid
+      })
 
-  // 3. Redirect based on role
-  if (role.value === 'staff') {
-    router.push({ name: 'StaffHome' })
-  } else if (role.value === 'volunteer') {
-    router.push({ name: 'VolunteerHome' })
-  } else {
-    router.push({ name: 'UserHome' })
+      // Redirect based on the retrieved role
+      const target = userData.role === 'staff' ? 'StaffHome' : 
+                     userData.role === 'volunteer' ? 'VolunteerHome' : 'UserHome'
+      router.push({ name: target })
+    } else {
+      errors.email = "Account exists, but profile data is missing. Please sign up again."
+    }
+
+  } catch (error) {
+    // 3. Specific error prompts
+    if (error.code === 'auth/user-not-found') {
+      errors.email = "Account not found. Please sign up first."
+    } else if (error.code === 'auth/wrong-password') {
+      errors.password = "Incorrect password. Please try again."
+    } else if (error.code === 'auth/invalid-credential') {
+      // Modern Firebase often uses this generic error for security
+      errors.password = "Invalid email or password. Please try again."
+    } else {
+      errors.email = "Error: " + error.message
+    }
+  } finally {
+    isSubmitting.value = false
   }
 }
 </script>
