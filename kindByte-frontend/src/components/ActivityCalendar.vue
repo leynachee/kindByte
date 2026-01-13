@@ -133,8 +133,10 @@
   
   <script setup>
   import { ref, computed } from 'vue';
+  import { useRouter } from 'vue-router';
   
   // State
+  const router = useRouter();
   const viewMode = ref('calendar');
   const selectedFilter = ref('all');
   const currentDate = ref(new Date());
@@ -357,9 +359,8 @@
   };
   
   const joinActivity = (activity) => {
-    console.log('Joining activity:', activity);
-    // Navigate to registration page or show modal
-    // this.$router.push(`/register/${activity.id}`);
+    // Use the ID from your mock data (e.g., 1, 2, 3...)
+    router.push({ name: 'ViewEvent', params: { id: activity.id } });
   };
   </script>
   

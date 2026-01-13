@@ -3,7 +3,7 @@
     <!-- Header -->
     <div class="page-header">
       <h1>Create Event</h1>
-      <p class="subtitle">Fill in the details for your new event</p>
+      <p class="subtitle">Fill in the details for the new event</p>
     </div>
 
     <form @submit.prevent="handleSubmit" class="form-content" novalidate>
@@ -78,14 +78,7 @@
             <span v-if="isAttempted && !eventData.location" class="error-text">Location is required</span>
           </div>
 
-          <div class="form-group" :class="{ 'has-error': isAttempted && !eventData.category }">
-            <label class="form-label required">Category</label>
-            <select v-model="eventData.category" class="form-input form-select">
-              <option value="" disabled>Select category</option>
-              <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
-            </select>
-            <span v-if="isAttempted && !eventData.category" class="error-text">Please select a category</span>
-          </div>
+
 
           <div class="form-group">
             <label class="form-label">Event Image URL</label>

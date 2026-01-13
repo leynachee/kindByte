@@ -106,6 +106,23 @@ const router = createRouter({
       meta: { requiresAuth: true, roles: ['beneficiary', 'caregiver', 'volunteer', 'staff'] }
     },
     
+
+    // To view an event in depth
+    {
+      path: '/viewevent/:id', // The :id is the variable we pass
+      name: 'ViewEvent',
+      component: () => import('../views/ViewEvent.vue'),
+      meta: { requiresAuth: true, roles: ['beneficiary', 'caregiver', 'volunteer', 'staff'] }
+    },
+    
+    // After viewing the fine-grain details of an event, move on to register for the event
+
+    {
+      path: '/registerevent/:id', // The :id is the variable we pass
+      name: 'RegisterEvent',
+      component: () => import('../views/RegisterEvent.vue'),
+      meta: { requiresAuth: true, roles: ['beneficiary', 'caregiver', 'volunteer'] }
+    },
   ],
 })
 
