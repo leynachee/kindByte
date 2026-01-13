@@ -3,32 +3,61 @@ import HomeView from '../views/HomeView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
-  scrollBehavior(to) {
-    if (to.hash) {
-      return { el: to.hash, behavior: 'smooth', block: 'start' }
-    }
-    return { top: 0 }
-  },
   routes: [
-    {
-      path: '/',
-      name: 'home',
+    // Public Routes
+    { 
+      path: '/', 
+      name: 'home', 
       component: HomeView,
+      meta: { public: true }
     },
-    {
-      path: '/userhome',
-      name: 'UserHome',
-      component: () => import('../views/UserHomeView.vue'),
+    
+    // Beneficiary/Caregiver Routes
+    { 
+      path: '/userhome', 
+      name: 'UserHome', 
+      component: () => import('../components/UserHome.vue'),
+      meta: { requiresAuth: true, roles: ['beneficiary', 'caregiver'] }
     },
-    {
-      path: '/staffhome',
-      name: 'StaffHome',
-      component: () => import('../views/StaffHomeView.vue'),
+    { 
+      path: '/calendar', 
+      name: 'Calendar', 
+      component: () => import('../components/ActivityCalendar.vue'),
+      meta: { requiresAuth: true, roles: ['beneficiary', 'caregiver'] }
     },
-    {
-      path: '/login',
-      name: 'Login',
-      component: () => import('../views/LoginView.vue'),
+    { 
+      path: '/my-plans', 
+      name: 'MyPlans', 
+      component: () => import('../components/MyPlans.vue'),
+      meta: { requiresAuth: true, roles: ['beneficiary', 'caregiver'] }
+    },
+    
+    // Volunteer Routes
+    { 
+      path: '/volunteerhome', 
+      name: 'VolunteerHome', 
+      component: () => import('../components/VolunteerHome.vue'),
+      meta: { requiresAuth: true, roles: ['volunteer'] }
+    },
+    { 
+      path: '/my-shifts', 
+      name: 'MyShifts', 
+      component: () => import('../components/MyPlans.vue'), // Can reuse or create separate
+      meta: { requiresAuth: true, roles: ['volunteer'] }
+    },
+    
+    // Staff/Admin Routes
+    { 
+      path: '/staffhome', 
+      name: 'StaffHome', 
+      component: () => import('../components/StaffHome.vue'),
+      meta: { requiresAuth: true, roles: ['staff'] }
+    },
+    { 
+      path: '/staff/users', 
+      name: 'UserManagement',
+      component: () => import('../components/UserManagement.vue'),
+      meta: { requiresAuth: true, roles: ['staff'] }
     },
     {
       path: '/signup',
@@ -44,26 +73,6 @@ const router = createRouter({
       path: '/profile',
       name: 'Profile',
       component: () => import('../views/ProfileView.vue'),
-    },
-    {
-      path: '/createevent',
-      name: 'CreateEvent',
-      component: () => import('../views/CreateEvent.vue'),
-    },
-    {
-      path: '/editevent',
-      name: 'EditEvent',
-      component: () => import('../views/EditEvent.vue'),
-    },
-    {
-      path: '/registerevent',
-      name: 'RegisterEvent',
-      component: () => import('../views/RegisterEvent.vue'),
-    },
-    {
-      path: '/viewevent',
-      name: 'ViewEvent',
-      component: () => import('../views/ViewEvent.vue'),
     },
   ],
 })
