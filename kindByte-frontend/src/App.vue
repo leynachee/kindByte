@@ -5,9 +5,6 @@
       <header class="app-header">
         <div class="header-left">
           <img src="@/assets/minds-logo.png" alt="MINDS" class="logo" />
-          <div :class="['role-badge', user.role]">
-            {{ getRoleLabel(user.role) }}
-          </div>
         </div>
       </header>
 
@@ -122,16 +119,6 @@ const showBottomNav = computed(() => {
   return !hideNavRoutes.includes(route.name);
 });
 
-// Get role label for badge
-const getRoleLabel = (role) => {
-  const labels = {
-    beneficiary: 'Beneficiary',
-    caregiver: 'Caregiver',
-    volunteer: 'Volunteer',
-    staff: 'Staff Admin'
-  };
-  return labels[role] || role;
-};
 </script>
 
 <style>
@@ -197,31 +184,6 @@ body {
   height: 28px;
   width: auto;
   object-fit: contain;
-}
-
-.role-badge {
-  padding: 6px 12px;
-  border-radius: 12px;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.role-badge.beneficiary,
-.role-badge.caregiver {
-  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-  color: #1e40af;
-}
-
-.role-badge.volunteer {
-  background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);
-  color: #7c3aed;
-}
-
-.role-badge.staff {
-  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
-  color: #475569;
 }
 
 /* Scroll Area */
