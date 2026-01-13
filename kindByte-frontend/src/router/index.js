@@ -12,10 +12,10 @@ const router = createRouter({
       meta: { public: true }
     },
     
-    // AUTH ROUTES - Add these
+    // AUTH ROUTES
     {
       path: '/login',
-      name: 'Login',  // This name must match App.vue
+      name: 'Login',
       component: () => import('../components/Login.vue'),
       meta: { public: true }
     },
@@ -83,6 +83,18 @@ const router = createRouter({
       path: '/staff/events', 
       name: 'StaffEvents',
       component: () => import('../components/ActivityCalendar.vue'),
+      meta: { requiresAuth: true, roles: ['staff'] }
+    },
+    {
+      path: '/createevent',
+      name: 'CreateEvent',
+      component: () => import('../components/CreateEvent.vue'),
+      meta: { requiresAuth: true, roles: ['staff'] }
+    },
+    {
+      path: '/editevent/:id',
+      name: 'EditEvent',
+      component: () => import('../components/EditEvent.vue'),
       meta: { requiresAuth: true, roles: ['staff'] }
     },
     

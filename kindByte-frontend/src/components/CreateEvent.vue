@@ -1,181 +1,246 @@
 <template>
-  <div class="create-event">
-    <div class="container">
-      <div class="header">
-        <h1>Create New Event</h1>
-        <p class="subtitle">Fill in the details to launch your next experience</p>
-      </div>
+  <div class="page-container">
+    <!-- Header -->
+    <div class="page-header">
+      <h1>Create Event</h1>
+      <p class="subtitle">Fill in the details for your new event</p>
+    </div>
 
-      <form @submit.prevent="handleSubmit" class="event-form" novalidate>
-        
-        <div class="form-section">
-          <h2 class="section-title">📋 Event Details</h2>
-          
+    <form @submit.prevent="handleSubmit" class="form-content" novalidate>
+      
+      <!-- Event Details Section -->
+      <div class="section">
+        <h3 class="section-title">📋 Event Details</h3>
+        <div class="info-card">
           <div class="form-group" :class="{ 'has-error': isAttempted && !eventData.name }">
-            <label class="required">Event Name</label>
+            <label class="form-label required">Event Name</label>
             <input 
               v-model="eventData.name" 
               type="text" 
-              placeholder="e.g., Web Development Workshop 2026" 
+              class="form-input"
+              placeholder="e.g., Art Workshop 2026" 
             />
             <span v-if="isAttempted && !eventData.name" class="error-text">Event name is required</span>
           </div>
 
           <div class="form-group" :class="{ 'has-error': isAttempted && !eventData.description }">
-            <label class="required">Description</label>
-            <span class="hint">Provide a clear overview of the event's goals.</span>
+            <label class="form-label required">Description</label>
             <textarea 
               v-model="eventData.description" 
+              class="form-input form-textarea"
               placeholder="Tell attendees what this event is about..." 
-              rows="4"
+              rows="3"
             ></textarea>
             <span v-if="isAttempted && !eventData.description" class="error-text">Description is required</span>
           </div>
 
+          <div class="form-group" :class="{ 'has-error': isAttempted && !eventData.date }">
+            <label class="form-label required">Date & Time</label>
+            <input 
+              v-model="eventData.date" 
+              type="datetime-local" 
+              class="form-input"
+            />
+            <span v-if="isAttempted && !eventData.date" class="error-text">Please select a date</span>
+          </div>
+
           <div class="form-row">
-            <div class="form-group" :class="{ 'has-error': isAttempted && !eventData.date }">
-              <label class="required">Date & Time</label>
-              <input v-model="eventData.date" type="datetime-local" />
-              <span v-if="isAttempted && !eventData.date" class="error-text">Please select a date</span>
-            </div>
             <div class="form-group" :class="{ 'has-error': isAttempted && (!eventData.duration || eventData.duration <= 0) }">
-              <label class="required">Duration (hours)</label>
-              <input v-model.number="eventData.duration" type="number" min="0.5" step="0.5" />
+              <label class="form-label required">Duration (hrs)</label>
+              <input 
+                v-model.number="eventData.duration" 
+                type="number" 
+                class="form-input"
+                min="0.5" 
+                step="0.5" 
+              />
+            </div>
+            <div class="form-group" :class="{ 'has-error': isAttempted && !eventData.maxCapacity }">
+              <label class="form-label required">Capacity</label>
+              <input 
+                v-model.number="eventData.maxCapacity" 
+                type="number" 
+                class="form-input"
+                min="1" 
+                placeholder="50" 
+              />
             </div>
           </div>
 
           <div class="form-group" :class="{ 'has-error': isAttempted && !eventData.location }">
-            <label class="required">Location</label>
-            <input v-model="eventData.location" type="text" placeholder="e.g., Innovation Hub, Singapore" />
+            <label class="form-label required">Location</label>
+            <input 
+              v-model="eventData.location" 
+              type="text" 
+              class="form-input"
+              placeholder="e.g., MTC Central" 
+            />
             <span v-if="isAttempted && !eventData.location" class="error-text">Location is required</span>
           </div>
 
-          <div class="form-row">
-            <div class="form-group" :class="{ 'has-error': isAttempted && !eventData.maxCapacity }">
-              <label class="required">Max Capacity</label>
-              <input v-model.number="eventData.maxCapacity" type="number" min="1" placeholder="50" />
-            </div>
-            <div class="form-group" :class="{ 'has-error': isAttempted && !eventData.category }">
-              <label class="required">Category</label>
-              <select v-model="eventData.category">
-                <option value="" disabled>Select category</option>
-                <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
-              </select>
-            </div>
+          <div class="form-group" :class="{ 'has-error': isAttempted && !eventData.category }">
+            <label class="form-label required">Category</label>
+            <select v-model="eventData.category" class="form-input form-select">
+              <option value="" disabled>Select category</option>
+              <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
+            </select>
+            <span v-if="isAttempted && !eventData.category" class="error-text">Please select a category</span>
           </div>
 
           <div class="form-group">
-            <label>Event Image URL</label>
-            <input v-model="eventData.imageUrl" type="url" placeholder="https://example.com/image.jpg" />
-            <small class="hint">Leave empty for a default placeholder</small>
+            <label class="form-label">Event Image URL</label>
+            <input 
+              v-model="eventData.imageUrl" 
+              type="url" 
+              class="form-input"
+              placeholder="https://example.com/image.jpg" 
+            />
+            <span class="hint">Optional - Leave empty for default</span>
           </div>
         </div>
+      </div>
 
-        <div class="form-section">
-          <div class="section-header">
-            <h2 class="section-title">❓ Registration Questions</h2>
-            <p class="section-description">Gather specific information from your attendees</p>
-          </div>
+      <!-- Registration Questions Section -->
+      <div class="section">
+        <h3 class="section-title">❓ Registration Questions</h3>
+        
+        <div v-if="questions.length === 0" class="empty-state">
+          <p>No custom questions yet.</p>
+          <p class="hint">Add questions to collect info during registration.</p>
+        </div>
 
-          <div v-if="questions.length === 0" class="empty-questions">
-            <p>No custom questions yet. Add questions to collect data during registration.</p>
-          </div>
+        <div v-else class="questions-list">
+          <div 
+            v-for="(question, index) in questions" 
+            :key="question.id" 
+            class="question-card"
+            :class="{ 'has-error': isAttempted && !question.text }"
+          >
+            <div class="question-header">
+              <span class="question-number">Q{{ index + 1 }}</span>
+              <button type="button" @click="deleteQuestion(index)" class="btn-delete">
+                Remove
+              </button>
+            </div>
 
-          <div v-else class="questions-list">
-            <div 
-              v-for="(question, index) in questions" 
-              :key="question.id" 
-              class="question-card"
-              :class="{ 'has-error': isAttempted && !question.text }"
-            >
-              <div class="question-header">
-                <span class="question-number">Question {{ index + 1 }}</span>
-                <button type="button" @click="deleteQuestion(index)" class="btn-delete-small">Remove</button>
+            <div class="form-group">
+              <input 
+                v-model="question.text" 
+                type="text" 
+                class="form-input"
+                placeholder="Enter your question..." 
+              />
+              <span v-if="isAttempted && !question.text" class="error-text">Question text is required</span>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Type</label>
+                <select v-model="question.type" @change="updateQuestionType(index)" class="form-input form-select">
+                  <option value="text">Short Text</option>
+                  <option value="textarea">Long Text</option>
+                  <option value="mcq">Single Choice</option>
+                  <option value="checkbox">Multiple Choice</option>
+                  <option value="dropdown">Dropdown</option>
+                </select>
               </div>
-
-              <div class="question-body">
-                <div class="form-group">
-                  <input v-model="question.text" type="text" placeholder="Enter your question text..." />
-                  <span v-if="isAttempted && !question.text" class="error-text">Question text is required</span>
-                </div>
-
-                <div class="form-row">
-                  <div class="form-group">
-                    <label>Response Type</label>
-                    <select v-model="question.type" @change="updateQuestionType(index)">
-                      <option value="text">Short Text</option>
-                      <option value="textarea">Long Text</option>
-                      <option value="mcq">Single Choice (Radio)</option>
-                      <option value="checkbox">Multiple Choice</option>
-                      <option value="dropdown">Dropdown</option>
-                    </select>
-                  </div>
-                  <div class="form-group flex-center">
-                    <label class="checkbox-label">
-                      <input v-model="question.required" type="checkbox" /> Required Question
-                    </label>
-                  </div>
-                </div>
-
-                <div v-if="['mcq', 'checkbox', 'dropdown'].includes(question.type)" class="options-container">
-                  <label>Options</label>
-                  <div v-for="(option, optIndex) in question.options" :key="optIndex" class="option-row">
-                    <span class="option-marker">{{ optIndex + 1 }}</span>
-                    <input v-model="question.options[optIndex]" type="text" :placeholder="'Option ' + (optIndex + 1)" />
-                    <button type="button" @click="removeOption(index, optIndex)" v-if="question.options.length > 2" class="btn-text-danger">✕</button>
-                  </div>
-                  <button type="button" @click="addOption(index)" class="btn-add-option">+ Add Option</button>
-                </div>
+              <div class="form-group checkbox-group">
+                <label class="checkbox-label">
+                  <input v-model="question.required" type="checkbox" />
+                  <span>Required</span>
+                </label>
               </div>
             </div>
+
+            <div v-if="['mcq', 'checkbox', 'dropdown'].includes(question.type)" class="options-container">
+              <label class="form-label">Options</label>
+              <div v-for="(option, optIndex) in question.options" :key="optIndex" class="option-row">
+                <span class="option-number">{{ optIndex + 1 }}.</span>
+                <input 
+                  v-model="question.options[optIndex]" 
+                  type="text" 
+                  class="form-input"
+                  :placeholder="'Option ' + (optIndex + 1)" 
+                />
+                <button 
+                  type="button" 
+                  @click="removeOption(index, optIndex)" 
+                  v-if="question.options.length > 2" 
+                  class="btn-remove-option"
+                >
+                  ✕
+                </button>
+              </div>
+              <button type="button" @click="addOption(index)" class="btn-add-option">
+                + Add Option
+              </button>
+            </div>
           </div>
-
-          <button type="button" @click="addQuestion" class="btn-secondary full-width">+ Add Registration Question</button>
         </div>
 
-        <div v-if="isAttempted && !isFormValid" class="validation-summary">
-          ⚠️ Some required fields are missing. Please review the highlighted sections above.
-        </div>
+        <button type="button" @click="addQuestion" class="btn-secondary">
+          + Add Question
+        </button>
+      </div>
 
-        <div class="form-actions">
-          <button type="button" @click="goBack" class="btn-text">Cancel</button>
-          <div class="main-actions">
-            <button type="button" @click="previewEvent" class="btn-preview">Preview</button>
-            <button type="submit" class="btn-primary" :disabled="submitting">
-              {{ submitting ? 'Creating...' : 'Create Event' }}
-            </button>
-          </div>
-        </div>
-      </form>
+      <!-- Validation Summary -->
+      <div v-if="isAttempted && !isFormValid" class="validation-summary">
+        ⚠️ Please fill in all required fields
+      </div>
 
+      <!-- Action Buttons -->
+      <div class="action-section">
+        <button type="button" @click="previewEvent" class="btn-preview">
+          👁️ Preview
+        </button>
+        <button type="submit" class="btn-primary" :disabled="submitting">
+          {{ submitting ? 'Creating...' : '✓ Create Event' }}
+        </button>
+      </div>
+
+      <button type="button" @click="goBack" class="btn-cancel">
+        Cancel
+      </button>
+    </form>
+
+    <!-- Preview Modal -->
+    <teleport to="body">
       <transition name="fade">
         <div v-if="showPreview" class="modal-overlay" @click="closePreview">
           <div class="modal-content" @click.stop>
             <div class="modal-header">
-              <h2>Preview</h2>
+              <h2>Event Preview</h2>
               <button @click="closePreview" class="btn-close">✕</button>
             </div>
-            <div class="preview-scroll">
-              <div class="preview-content">
-                <div class="preview-img-box" v-if="eventData.imageUrl">
-                  <img :src="eventData.imageUrl" alt="Event Banner" />
-                </div>
-                <h1 class="preview-title">{{ eventData.name || 'Untitled Event' }}</h1>
-                <div class="preview-badges">
-                  <span class="badge">📍 {{ eventData.location || 'No location set' }}</span>
-                  <span class="badge">📅 {{ formatPreviewDate(eventData.date) }}</span>
-                  <span class="badge">📂 {{ eventData.category || 'Uncategorized' }}</span>
-                </div>
-                <div class="preview-description">
-                  <h3>About</h3>
-                  <p>{{ eventData.description || 'No description provided.' }}</p>
-                </div>
+            <div class="modal-body">
+              <div v-if="eventData.imageUrl" class="preview-image">
+                <img :src="eventData.imageUrl" alt="Event Banner" />
+              </div>
+              <h3 class="preview-title">{{ eventData.name || 'Untitled Event' }}</h3>
+              <div class="preview-meta">
+                <span class="meta-item">📍 {{ eventData.location || 'No location' }}</span>
+                <span class="meta-item">📅 {{ formatPreviewDate(eventData.date) }}</span>
+                <span class="meta-item">👥 {{ eventData.maxCapacity || '0' }} spots</span>
+                <span class="meta-item">📂 {{ eventData.category || 'Uncategorized' }}</span>
+              </div>
+              <div class="preview-description">
+                <h4>About this event</h4>
+                <p>{{ eventData.description || 'No description provided.' }}</p>
+              </div>
+              <div v-if="questions.length > 0" class="preview-questions">
+                <h4>Registration Questions ({{ questions.length }})</h4>
+                <ul>
+                  <li v-for="(q, i) in questions" :key="i">
+                    {{ q.text || 'Untitled question' }}
+                    <span v-if="q.required" class="required-badge">Required</span>
+                  </li>
+                </ul>
               </div>
             </div>
           </div>
         </div>
       </transition>
-    </div>
+    </teleport>
   </div>
 </template>
 
@@ -188,11 +253,10 @@ export default {
   setup() {
     const router = useRouter();
     
-    // State
     const isAttempted = ref(false);
     const submitting = ref(false);
     const showPreview = ref(false);
-    const categories = ['Technology', 'Business', 'Arts', 'Education', 'Sports', 'Social', 'Other'];
+    const categories = ['Arts & Crafts', 'Sports', 'Music', 'Education', 'Social', 'Wellness', 'Technology', 'Other'];
 
     const eventData = reactive({
       name: '',
@@ -208,7 +272,6 @@ export default {
     const questions = ref([]);
     let questionIdCounter = 0;
 
-    // Validation
     const isFormValid = computed(() => {
       const basicInfoValid = eventData.name && 
                              eventData.description && 
@@ -222,7 +285,6 @@ export default {
       return basicInfoValid && questionsValid;
     });
 
-    // Methods
     const addQuestion = () => {
       questions.value.push({
         id: ++questionIdCounter,
@@ -264,31 +326,26 @@ export default {
     };
 
     const previewEvent = () => {
-      if (!eventData.name) {
-        isAttempted.value = true;
-        alert('Please fill in the event name to see a preview.');
-        return;
-      }
       showPreview.value = true;
     };
 
-    const closePreview = () => { showPreview.value = false; };
+    const closePreview = () => { 
+      showPreview.value = false; 
+    };
 
     const goBack = () => {
-      if (confirm('Are you sure you want to discard changes?')) router.go(-1);
+      if (confirm('Discard changes?')) router.go(-1);
     };
 
     const handleSubmit = async () => {
       isAttempted.value = true;
 
       if (!isFormValid.value) {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
       }
 
       submitting.value = true;
       try {
-        // Simulate API/Firebase Call
         await new Promise(resolve => setTimeout(resolve, 1500));
         console.log('Event Created:', { ...eventData, questions: questions.value });
         alert('Event created successfully!');
@@ -311,245 +368,512 @@ export default {
 </script>
 
 <style scoped>
-/* Base Reset */
-* { box-sizing: border-box; }
-
-.create-event {
-  min-height: 100vh;
-  background: #f4f7f9;
-  padding: 40px 20px;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+* {
+  box-sizing: border-box;
 }
 
-.container {
-  max-width: 850px;
-  margin: 0 auto;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-  overflow: hidden;
+.page-container {
+  background: #f8fafc;
+  min-height: 100vh;
+  padding-bottom: 100px;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 /* Header */
-.header {
-  background: #ffffff;
-  padding: 40px 40px 20px 40px;
-  border-bottom: 1px solid #edf2f7;
+.page-header {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  padding: 24px 20px 30px 20px;
+  color: white;
 }
 
-.header h1 { margin: 0; color: #1a202c; font-size: 2rem; font-weight: 800; }
-.subtitle { color: #718096; margin-top: 8px; font-size: 1rem; }
-
-/* Form Layout */
-.event-form { padding: 40px; }
-.form-section { margin-bottom: 40px; }
-.section-title { 
-  font-size: 1.25rem; 
-  color: #2d3748; 
-  margin-bottom: 24px; 
-  padding-bottom: 8px;
-  border-bottom: 2px solid #667eea;
-  display: inline-block;
+.page-header h1 {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 4px 0;
 }
 
-.form-group { margin-bottom: 20px; }
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.subtitle {
+  font-size: 14px;
+  opacity: 0.9;
+  margin: 0;
+}
 
-label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.9rem; color: #4a5568; }
-.required::after { content: ' *'; color: #e53e3e; }
+/* Form Content */
+.form-content {
+  padding: 20px 16px;
+}
 
-/* Inputs */
-input, select, textarea {
-  width: 100%;
-  padding: 12px 16px;
+/* Section */
+.section {
+  margin-bottom: 24px;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 12px 0;
+}
+
+/* Info Card */
+.info-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
   border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+/* Form Groups */
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group:last-child {
+  margin-bottom: 0;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.form-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 6px;
+}
+
+.form-label.required::after {
+  content: ' *';
+  color: #ef4444;
+}
+
+.form-input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #0f172a;
   background: #fff;
+  transition: all 0.2s;
 }
 
-input:focus, select:focus, textarea:focus {
+.form-input:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
-textarea { resize: vertical; }
-.hint { font-size: 0.8rem; color: #a0aec0; margin-bottom: 8px; display: block; }
-
-/* Validation Styles */
-.has-error input, .has-error select, .has-error textarea {
-  border-color: #fc8181;
-  background-color: #fff5f5;
+.form-textarea {
+  resize: vertical;
+  min-height: 80px;
 }
 
-.has-error label { color: #c53030; }
+.form-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+  padding-right: 40px;
+}
+
+.hint {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-top: 4px;
+  display: block;
+}
+
+/* Validation */
+.has-error .form-input {
+  border-color: #fca5a5;
+  background-color: #fef2f2;
+}
+
+.has-error .form-label {
+  color: #dc2626;
+}
 
 .error-text {
-  color: #e53e3e;
-  font-size: 0.8rem;
+  color: #dc2626;
+  font-size: 12px;
   font-weight: 500;
   margin-top: 4px;
   display: block;
 }
 
 .validation-summary {
-  background: #fff5f5;
-  color: #c53030;
-  padding: 16px;
-  border-radius: 8px;
-  border: 1px solid #feb2b2;
-  margin-bottom: 24px;
+  background: #fef2f2;
+  color: #dc2626;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid #fca5a5;
+  margin-bottom: 16px;
   font-weight: 600;
+  font-size: 14px;
   text-align: center;
 }
 
-/* Question Cards */
-.question-card {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+/* Empty State */
+.empty-state {
+  background: white;
   border-radius: 12px;
   padding: 24px;
-  margin-bottom: 24px;
-  transition: transform 0.2s;
+  text-align: center;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 12px;
 }
 
-.question-card.has-error { border-color: #feb2b2; }
-
-.question-header { 
-  display: flex; 
-  justify-content: space-between; 
-  align-items: center; 
-  margin-bottom: 16px; 
+.empty-state p {
+  margin: 0;
+  color: #64748b;
+  font-size: 14px;
 }
 
-.question-number { font-weight: 700; color: #667eea; font-size: 0.9rem; text-transform: uppercase; }
-
-.options-container { 
-  background: white; 
-  padding: 20px; 
-  border-radius: 8px; 
-  margin-top: 16px; 
-  border: 1px dashed #cbd5e0;
+/* Question Cards */
+.questions-list {
+  margin-bottom: 12px;
 }
 
-.option-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
-.option-marker { color: #a0aec0; font-size: 0.8rem; width: 20px; }
+.question-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 12px;
+}
+
+.question-card.has-error {
+  border-color: #fca5a5;
+}
+
+.question-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.question-number {
+  font-size: 13px;
+  font-weight: 700;
+  color: #6366f1;
+  background: #eef2ff;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.btn-delete {
+  background: none;
+  border: none;
+  color: #ef4444;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.checkbox-group {
+  display: flex;
+  align-items: flex-end;
+  padding-bottom: 4px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #475569;
+  cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #6366f1;
+}
+
+/* Options */
+.options-container {
+  background: #f8fafc;
+  padding: 14px;
+  border-radius: 10px;
+  margin-top: 12px;
+  border: 1px dashed #cbd5e1;
+}
+
+.option-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.option-number {
+  font-size: 13px;
+  color: #94a3b8;
+  font-weight: 600;
+  width: 20px;
+}
+
+.option-row .form-input {
+  flex: 1;
+  padding: 10px 12px;
+}
+
+.btn-remove-option {
+  background: none;
+  border: none;
+  color: #ef4444;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.btn-add-option {
+  width: 100%;
+  background: none;
+  border: 1px dashed #6366f1;
+  color: #6366f1;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 8px;
+}
 
 /* Buttons */
-.form-actions { 
-  display: flex; 
-  justify-content: space-between; 
-  align-items: center; 
-  padding-top: 30px;
-  border-top: 1px solid #edf2f7;
-}
-
-.main-actions { display: flex; gap: 16px; }
-
-.btn-primary { 
-  background: #667eea; 
-  color: white; 
-  border: none; 
-  padding: 14px 28px; 
-  border-radius: 8px; 
-  font-weight: 700; 
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.btn-primary:hover:not(:disabled) { background: #5a67d8; }
-.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-
-.btn-preview { 
-  background: #fff; 
-  color: #667eea; 
-  border: 1px solid #667eea; 
-  padding: 13px 28px; 
-  border-radius: 8px; 
-  font-weight: 600; 
-  cursor: pointer;
-}
-
-.btn-secondary { 
-  background: #f7fafc; 
-  color: #4a5568; 
-  border: 1px solid #e2e8f0; 
-  padding: 14px; 
-  border-radius: 8px; 
-  cursor: pointer;
+.btn-secondary {
+  width: 100%;
+  background: white;
+  color: #475569;
+  border: 2px solid #e2e8f0;
+  padding: 14px;
+  border-radius: 12px;
+  font-size: 14px;
   font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-.btn-text { background: none; border: none; color: #718096; cursor: pointer; font-weight: 500; }
-.btn-text:hover { color: #2d3748; }
+.btn-secondary:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
 
-.btn-add-option { 
-  background: none; 
-  border: 1px dashed #667eea; 
-  color: #667eea; 
-  width: 100%; 
-  padding: 8px; 
-  border-radius: 6px; 
-  margin-top: 8px;
+.action-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.btn-preview {
+  background: white;
+  color: #6366f1;
+  border: 2px solid #6366f1;
+  padding: 14px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-preview:hover {
+  background: #eef2ff;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: white;
+  border: none;
+  padding: 14px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  transition: all 0.2s;
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-cancel {
+  width: 100%;
+  background: none;
+  border: none;
+  color: #94a3b8;
+  padding: 14px;
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
 }
 
-.btn-delete-small { background: none; border: none; color: #fc8181; cursor: pointer; font-size: 0.8rem; }
-.btn-text-danger { background: none; border: none; color: #fc8181; cursor: pointer; font-size: 1.2rem; }
-
-.full-width { width: 100%; }
-.flex-center { display: flex; align-items: center; }
-
-/* Modal Styles */
-.modal-overlay { 
-  position: fixed; 
-  inset: 0; 
-  background: rgba(26, 32, 44, 0.8); 
-  display: flex; 
-  justify-content: center; 
-  align-items: center; 
-  z-index: 1000; 
-  backdrop-filter: blur(4px); 
+.btn-cancel:hover {
+  color: #64748b;
 }
 
-.modal-content { 
-  background: white; 
-  width: 90%; 
-  max-width: 700px; 
-  border-radius: 20px; 
-  max-height: 85vh; 
-  display: flex; 
-  flex-direction: column; 
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+  backdrop-filter: blur(4px);
+}
+
+.modal-content {
+  background: white;
+  width: 100%;
+  max-width: 400px;
+  border-radius: 16px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
 }
 
-.modal-header { 
-  padding: 20px 30px; 
-  border-bottom: 1px solid #edf2f7; 
-  display: flex; 
-  justify-content: space-between; 
-  align-items: center; 
+.modal-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.preview-scroll { overflow-y: auto; padding: 40px; }
-.preview-img-box { width: 100%; height: 250px; overflow: hidden; border-radius: 12px; margin-bottom: 24px; }
-.preview-img-box img { width: 100%; height: 100%; object-fit: cover; }
-.preview-title { font-size: 2.25rem; color: #1a202c; margin-bottom: 16px; }
-.preview-badges { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; }
-.badge { background: #edf2f7; color: #4a5568; padding: 8px 16px; border-radius: 30px; font-size: 0.85rem; font-weight: 500; }
-.preview-description h3 { margin-bottom: 12px; color: #2d3748; }
-.preview-description p { line-height: 1.6; color: #4a5568; }
+.modal-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.btn-close {
+  background: #f1f5f9;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  color: #64748b;
+}
+
+.modal-body {
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.preview-image {
+  width: 100%;
+  height: 150px;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.preview-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.preview-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 12px 0;
+}
+
+.preview-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.meta-item {
+  background: #f1f5f9;
+  color: #475569;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.preview-description h4,
+.preview-questions h4 {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 8px 0;
+}
+
+.preview-description p {
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.preview-questions {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.preview-questions ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.preview-questions li {
+  font-size: 13px;
+  color: #475569;
+  margin-bottom: 6px;
+}
+
+.required-badge {
+  background: #fef2f2;
+  color: #dc2626;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
+}
 
 /* Transitions */
-.fade-enter-active, .fade-leave-active { transition: opacity 0.3s; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
 
-@media (max-width: 768px) {
-  .form-row { grid-template-columns: 1fr; }
-  .form-actions { flex-direction: column-reverse; gap: 16px; }
-  .main-actions { width: 100%; flex-direction: column; }
-  .btn-preview, .btn-primary { width: 100%; }
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>
