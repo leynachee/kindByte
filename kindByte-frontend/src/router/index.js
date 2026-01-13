@@ -59,72 +59,18 @@ const router = createRouter({
       component: () => import('../components/UserManagement.vue'),
       meta: { requiresAuth: true, roles: ['staff'] }
     },
-    { 
-      path: '/staff/events', 
-      name: 'StaffEvents',
-      component: () => import('../components/ActivityCalendar.vue'), // Can reuse with staff view
-      meta: { requiresAuth: true, roles: ['staff'] }
+    {
+      path: '/signup',
+      name: 'Signup',
+      component: () => import('../views/SignupView.vue'),
     },
-    { 
-      path: '/staff/registrations', 
-      name: 'StaffRegistrations',
-      component: () => import('../components/StaffHome.vue'), // Placeholder
-      meta: { requiresAuth: true, roles: ['staff'] }
+    {
+      path: '/profile',
+      name: 'Profile',
+      component: () => import('../views/ProfileView.vue'),
     },
-    
-    // Shared Routes (All authenticated users)
-    { 
-      path: '/profile', 
-      name: 'Profile', 
-      component: () => import('../components/Profile.vue'),
-      meta: { requiresAuth: true, roles: ['beneficiary', 'caregiver', 'volunteer', 'staff'] }
-    },
-    
   ],
 })
 
-// Navigation Guard for Role-Based Access Control
-router.beforeEach((to, from, next) => {
-  // Get current user role from your auth store/state management
-  // Replace this with your actual auth logic
-  const currentUser = getCurrentUser() // You'll need to implement this
-  const isAuthenticated = !!currentUser
-  const userRole = currentUser?.role
-
-  // Check if route requires authentication
-  if (to.meta.requiresAuth && !isAuthenticated) {
-    // Redirect to login/home if not authenticated
-    next({ name: 'home' })
-    return
-  }
-
-  // Check if user has required role
-  if (to.meta.roles && !to.meta.roles.includes(userRole)) {
-    // Redirect to user's appropriate home page
-    const homeRoutes = {
-      beneficiary: '/userhome',
-      caregiver: '/userhome',
-      volunteer: '/volunteerhome',
-      staff: '/staffhome'
-    }
-    next(homeRoutes[userRole] || '/')
-    return
-  }
-
-  next()
-})
-
-// Helper function - implement based on your auth system
-function getCurrentUser() {
-  // Example: Get from localStorage, Pinia store, or Vuex
-  // return JSON.parse(localStorage.getItem('user'))
-  
-  // For development, you can mock a user:
-  return {
-    id: '1',
-    name: 'Xuan Yu',
-    role: 'beneficiary' // Change this to test different roles
-  }
-}
 
 export default router
