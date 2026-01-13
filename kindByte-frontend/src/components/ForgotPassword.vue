@@ -5,27 +5,21 @@
         </div>
 
         <div class="form-container">
-            <h2 class="title">Welcome Back</h2>
-            <p>Log in to your account</p>
+            <h2 class="title">Forgot Password?</h2>
+            <p>Enter your User ID to receive a password reset email.</p>
 
             <form @submit.prevent="handleLogin">
                 <div class="input-group">
-                    <label for="name">Full Name</label>
-                    <input type="name" id="name" v-model="name" placeholder="Enter a valid User ID" required />
-                    <span v-if="errors.name" class="error-message">{{ errors.name }}</span>
+                    <label for="userID">User ID</label>
+                    <input type="userID" id="userID" v-model="userID" placeholder="Enter a valid User ID" required />
+                    <span v-if="errors.userID" class="error-message">{{ errors.userID }}</span>
                 </div>
 
                 <div class="input-group">
-                    <label for="password">Password</label>
-                    <input type="password" id="password" v-model="password" placeholder="Enter your password"
+                    <label for="email">Email</label>
+                    <input type="email" id="email" v-model="email" placeholder="Enter your email"
                         required />
-                    <span v-if="errors.password" class="error-message">{{ errors.password }}</span>
-                </div>
-
-                <div class="forgot-password">
-                    <a>
-                        <RouterLink to="/forgotpassword">Forgot password?</RouterLink>
-                    </a>
+                    <span v-if="errors.email" class="error-message">{{ errors.email }}</span>
                 </div>
 
                 <!-- <div class="checkbox-group">
@@ -33,12 +27,12 @@
                     <label for="rememberMe">Remember me</label>
                 </div> -->
 
-                <button type="submit" class="btn">Log in</button>
+                <button type="submit" @submit.prevent="handleForgotPassword" class="btn">Submit</button>
 
                 <div class="switch-text">
-                    Don’t have an account?
+                    Want to go back?
                     <a>
-                        <RouterLink to="/signup">Sign up</RouterLink>
+                        <RouterLink to="/login">Login</RouterLink>
                     </a>
                 </div>
             </form>
@@ -53,10 +47,9 @@ import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
-const name = ref('')
-const password = ref('')
-// const rememberMe = ref(false)
-const errors = reactive({ email: '', password: '' })
+const userID = ref('')
+const email = ref('')
+const errors = reactive({ userID: '', email: '' })
 
 // function validateEmail(email) {
 //     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -65,22 +58,22 @@ const errors = reactive({ email: '', password: '' })
 
 // async function handleLogin() {
 //     // reset errors
-//     errors.name = ''
-//     errors.password = ''
+//     errors.userID = ''
+//     errors.email = ''
 
 //     // client-side validation
-//     if (!validatename(name.value)) {
-//         errors.name = 'Please enter a valid name'
+//     if (!validateuserID(userID.value)) {
+//         errors.userID = 'Please enter a valid userID'
 //     }
-//     if (password.value.trim() === '') {
-//         errors.password = 'Password is required'
+//     if (email.value.trim() === '') {
+//         errors.email = 'email is required'
 //     }
 
-//     if (!errors.name && !errors.password) {
+//     if (!errors.userID && !errors.email) {
 //         try {
 //             const loginBody = {
-//                 name: name.value,
-//                 password: password.value,
+//                 userID: userID.value,
+//                 email: email.value,
 //             }
 
 //             const response = await axios.post('http://localhost:8000/api/auth/login', loginBody, {
@@ -112,23 +105,27 @@ const errors = reactive({ email: '', password: '' })
 //                 const msg = err.response.data?.message || ''
 
 //                 if (status === 404) {
-//                     errors.name = 'No account found with this name'
+//                     errors.userID = 'No account found with this userID'
 //                 } else if (status === 401) {
-//                     errors.password = 'Incorrect password'
+//                     errors.email = 'Incorrect email'
 //                 } else if (status === 400) {
-//                     errors.name = msg || 'Invalid request'
+//                     errors.userID = msg || 'Invalid request'
 //                 } else if (status >= 500) {
-//                     errors.name = 'Server error, please try again later'
+//                     errors.userID = 'Server error, please try again later'
 //                 } else {
-//                     errors.password = 'Login failed, please check your credentials'
+//                     errors.email = 'Login failed, please check your credentials'
 //                 }
 //             } else {
 //                 // No response from server
-//                 errors.name = 'Unable to connect to server. Please try again later.'
+//                 errors.userID = 'Unable to connect to server. Please try again later.'
 //             }
 //         }
 //     }
 // }
+
+function handleForgotPassword() {
+  alert('Password reset link would be sent to your email!')
+}
 
 </script>
 
@@ -426,3 +423,4 @@ body {
     }
 }
 </style>
+
