@@ -1,15 +1,15 @@
 <template>
   <div id="app-wrapper">
     <div class="mobile-frame">
-      <!-- Header -->
-      <header class="app-header">
+      <!-- Header - hide on login/signup -->
+      <header class="app-header" v-if="showHeader">
         <div class="header-left">
           <img src="@/assets/minds-logo.png" alt="MINDS" class="logo" />
         </div>
       </header>
 
       <!-- Main Content Area -->
-      <main class="scroll-area">
+      <main class="scroll-area" :class="{ 'full-screen': !showHeader }">
         <router-view v-slot="{ Component }">
           <transition name="fade" mode="out-in">
             <component :is="Component" />
@@ -113,10 +113,16 @@ const homePath = computed(() => {
   return roleRoutes[user.value.role] || '/';
 });
 
-// Hide bottom nav on certain pages (login, 404, etc.)
+// Hide header and nav on auth pages
+// In App.vue
+const hideOnRoutes = ['home', 'NotFound', 'Login', 'Signup', 'ForgotPassword'];
+
+const showHeader = computed(() => {
+  return !hideOnRoutes.includes(route.name);
+});
+
 const showBottomNav = computed(() => {
-  const hideNavRoutes = ['home', 'NotFound', 'Login', 'Signup'];
-  return !hideNavRoutes.includes(route.name);
+  return !hideOnRoutes.includes(route.name);
 });
 
 </script>

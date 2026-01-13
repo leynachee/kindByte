@@ -1,7 +1,7 @@
 <template>
   <div class="auth-page">
     <div class="logo-container">
-      <img src="/logo.png" alt="Minds Logo" />
+      <img src="@/assets/minds-logo.png" alt="Minds Logo" />
     </div>
 
     <div class="form-container">
@@ -16,7 +16,7 @@
         </div>
 
         <div class="input-group">
-          <label for="name">User ID</label>
+          <label for="userID">User ID</label>
           <input type="text" id="userID" v-model="userID" placeholder="Enter your User ID" required />
           <span v-if="errors.userID" class="error-message">{{ errors.userID }}</span>
         </div>
@@ -43,22 +43,15 @@
             required
             @input="checkPasswordStrength"
           />
-          <div class="password-strength" :class="passwordStrength"></div>
+          <div v-if="password" class="password-strength" :class="passwordStrength"></div>
           <span v-if="errors.password" class="error-message">{{ errors.password }}</span>
         </div>
-
-        <!-- <div class="checkbox-group">
-          <input type="checkbox" id="agreeTerms" v-model="agreeTerms" />
-          <label for="agreeTerms">I agree to the Terms & Conditions</label>
-        </div> -->
 
         <button type="submit" class="btn">Sign up</button>
 
         <div class="switch-text">
           Already have an account?
-          <a>
-              <RouterLink to="/login">Log in</RouterLink>
-          </a>
+          <RouterLink to="/login">Log in</RouterLink>
         </div>
       </form>
     </div>
@@ -68,7 +61,6 @@
 <script setup>
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-// import axios from 'axios'
 
 const router = useRouter()
 
@@ -76,9 +68,8 @@ const userID = ref('')
 const name = ref('')
 const email = ref('')
 const password = ref('')
-const agreeTerms = ref(false)
 const passwordStrength = ref('')
-const errors = reactive({ name: '', email: '', password: '' })
+const errors = reactive({ name: '', userID: '', email: '', password: '' })
 
 function validateEmail(email) {
   const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -95,36 +86,25 @@ function checkPasswordStrength() {
   passwordStrength.value = getPasswordStrength(password.value)
 }
 
-// const handleSignup = async () => {
-//   errors.userID = ''
-//   errors.name = ''
-//   errors.email = ''
-//   errors.password = ''
+function handleSignup() {
+  // Reset errors
+  errors.name = ''
+  errors.userID = ''
+  errors.email = ''
+  errors.password = ''
 
-//   if (name.value.trim() === '') errors.name = 'Name is required'
-//   if (!validateEmail(email.value)) errors.email = 'Please enter a valid email'
-//   if (password.value.length < 6) errors.password = 'Password must be at least 6 characters'
-//   if (!agreeTerms.value) {
-//     alert('Please agree to the Terms & Conditions')
-//     return
-//   }
+  // Validation
+  if (name.value.trim() === '') errors.name = 'Name is required'
+  if (userID.value.trim() === '') errors.userID = 'User ID is required'
+  if (!validateEmail(email.value)) errors.email = 'Please enter a valid email'
+  if (password.value.length < 6) errors.password = 'Password must be at least 6 characters'
 
-//   if (!errors.name && !errors.email && !errors.password) {
-//     const signupBody = {
-//       name: name.value,
-//       email: email.value,
-//       password: password.value,
-//     }
-
-//     const response = await axios.post('http://localhost:8000/api/auth/signup', signupBody, {
-//       headers: { 'Content-Type': 'application/json' },
-//     })
-
-//     if (response.status === 201) {
-//       setTimeout(() => router.push('/login'), 1000)
-//     }
-//   }
-// }
+  if (!errors.name && !errors.userID && !errors.email && !errors.password) {
+    // For now, just redirect to login
+    alert('Account created successfully!')
+    router.push('/login')
+  }
+}
 </script>
 
 <style scoped>
@@ -133,177 +113,98 @@ function checkPasswordStrength() {
   padding: 0;
   box-sizing: border-box;
   font-family: 'Plus Jakarta Sans', sans-serif;
-  color: black;
-}
-
-body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #cccccc;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px 20px;
-  position: relative;
-  overflow-x: hidden;
 }
 
 .auth-page {
-  min-height: 100vh;
-  width: 100vw;
+  min-height: 100%;
+  width: 100%;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  background:
-    linear-gradient(rgba(255, 255, 255, 0.678), rgba(255, 255, 255, 0.654)),
-    url('../../public/signup.png') center/cover no-repeat;
-  background-size: 50px auto; /* Adjust percentage as needed */
-  background-position: center;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  position: relative;
+  padding: 40px 20px;
 }
-
-.form-container h2,
-.form-container p {
-  text-align: center;
-}
-
-.title {
-  font-family: 'Bricolage Grotesque', sans-serif;
-  color: #00A5E3;
-}
-
-/* Decorative food images */
-.decoration {
-  position: fixed;
-  z-index: 1;
-}
-
-/* .decoration.top-right {
-    top: 20px;
-    right: 20px;
-    width: 200px;
-    height: 200px;
-    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><circle cx="100" cy="80" r="20" fill="%23ffd93d"/><path d="M80 100 Q100 80 120 100" stroke="%23228b22" stroke-width="3" fill="none"/><ellipse cx="100" cy="140" rx="15" ry="20" fill="%23ff6b6b"/></svg>') no-repeat;
-}
-
-.decoration.bottom-left {
-    bottom: 20px;
-    left: 20px;
-    width: 200px;
-    height: 200px;
-    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><circle cx="50" cy="50" r="15" fill="%23ff6b6b"/><circle cx="80" cy="45" r="15" fill="%23ff6b6b"/><circle cx="65" cy="70" r="15" fill="%23ff6b6b"/><path d="M100 100 L120 80 L140 100" stroke="%23228b22" stroke-width="3" fill="none"/></svg>') no-repeat;
-}
-
-.decoration.bottom-right {
-    bottom: 20px;
-    right: 20px;
-    width: 180px;
-    height: 180px;
-    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180"><ellipse cx="90" cy="60" rx="25" ry="30" fill="%23ff69b4"/><path d="M70 100 Q90 80 110 100 Q90 120 70 100" fill="%23ffd93d"/><rect x="85" y="120" width="10" height="40" fill="%23228b22"/></svg>') no-repeat;
-} */
 
 .logo-container {
-  width: 180px;
-  height: 180px;
-  background: #F9FAFB;
+  width: 100px;
+  height: 100px;
+  background: white;
   border-radius: 50%;
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-bottom: 40px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-  z-index: 2;
-  position: relative;
-  overflow: hidden;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .logo-container img {
-  width: 120px;
+  width: 70px;
   height: auto;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .form-container {
   background: white;
-  border-radius: 30px;
-  padding: 50px 60px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  border-radius: 24px;
+  padding: 32px 28px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   width: 100%;
-  max-width: 500px;
-  position: relative;
-  z-index: 2;
+  max-width: 380px;
 }
 
-.form-wrapper {
-  position: relative;
-  overflow: hidden;
-}
-
-.form-section {
-  transition:
-    opacity 0.3s ease,
-    transform 0.3s ease;
-}
-
-.form-section.hidden {
-  display: none;
-}
-
-.form-section h2 {
-  font-size: 28px;
+.title {
+  font-size: 24px;
+  color: #00A5E3;
+  margin-bottom: 8px;
   text-align: center;
-  margin-bottom: 10px;
-  color: #333;
+  font-weight: 700;
 }
 
-.form-section p {
+.form-container > p {
   text-align: center;
-  color: #666;
-  margin-bottom: 35px;
-  font-size: 15px;
+  color: #64748b;
+  margin-bottom: 24px;
+  font-size: 14px;
 }
 
 .input-group {
-  margin-bottom: 25px;
+  margin-bottom: 18px;
 }
 
 .input-group label {
   display: block;
-  margin-bottom: 8px;
-  color: #333;
-  font-weight: 500;
-  font-size: 15px;
+  margin-bottom: 6px;
+  color: #1e293b;
+  font-weight: 600;
+  font-size: 13px;
 }
 
 .input-group input {
   width: 100%;
-  padding: 15px 20px;
-  border: none;
-  background: #e8e8e8;
-  border-radius: 25px;
-  font-size: 15px;
-  transition: all 0.3s;
+  padding: 12px 16px;
+  border: 2px solid #e2e8f0;
+  background: white;
+  border-radius: 12px;
+  font-size: 14px;
+  transition: all 0.2s;
   outline: none;
+  color: #1e293b;
 }
 
 .input-group input:focus {
-  background: #ddd;
-  box-shadow: 0 0 0 3px rgba(68, 112, 77, 0.1);
+  border-color: #00A5E3;
+  box-shadow: 0 0 0 3px rgba(0, 165, 227, 0.1);
 }
 
 .input-group input::placeholder {
-  color: #999;
+  color: #94a3b8;
 }
 
 .error-message {
-  color: #ff4757;
+  color: #ef4444;
   font-size: 12px;
-  margin-top: 5px;
-  display: none;
+  margin-top: 4px;
+  display: block;
 }
 
 .password-strength {
@@ -314,38 +215,38 @@ body {
 }
 
 .strength-weak {
-  background: #ff4757;
+  background: #ef4444;
   width: 33%;
 }
 
 .strength-medium {
-  background: #ffa502;
+  background: #f59e0b;
   width: 66%;
 }
 
 .strength-strong {
-  background: #26de81;
+  background: #10b981;
   width: 100%;
 }
 
 .btn {
   width: 100%;
-  padding: 15px;
-  background: #00A5E3;
+  padding: 14px;
+  background: linear-gradient(135deg, #00A5E3 0%, #0088bb 100%);
   color: white;
   border: none;
-  border-radius: 25px;
-  font-size: 16px;
-  font-weight: 600;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.3s;
-  margin-top: 10px;
+  margin-top: 8px;
+  box-shadow: 0 4px 12px rgba(0, 165, 227, 0.3);
 }
 
 .btn:hover {
-  background: #007BB0;
   transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(68, 112, 77, 0.3);
+  box-shadow: 0 6px 20px rgba(0, 165, 227, 0.4);
 }
 
 .btn:active {
@@ -354,69 +255,19 @@ body {
 
 .switch-text {
   text-align: center;
-  margin-top: 25px;
-  color: #666;
-  font-size: 14px;
+  margin-top: 20px;
+  color: #64748b;
+  font-size: 13px;
 }
 
 .switch-text a {
   color: #00A5E3;
-  font-weight: 600;
+  font-weight: 700;
   text-decoration: none;
-  cursor: pointer;
+  margin-left: 4px;
 }
 
 .switch-text a:hover {
   text-decoration: underline;
-}
-
-/* .checkbox-group {
-  display: flex;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.checkbox-group input {
-  margin-right: 10px;
-  cursor: pointer;
-  width: 18px;
-  height: 18px;
-}
-
-.checkbox-group label {
-  font-size: 14px;
-  color: #666;
-  cursor: pointer;
-} */
-
-.forgot-password {
-  text-align: right;
-  margin-top: -15px;
-  margin-bottom: 20px;
-}
-
-.forgot-password a {
-  color: #44704d;
-  font-size: 13px;
-  text-decoration: none;
-}
-
-.forgot-password a:hover {
-  text-decoration: underline;
-}
-
-@media (max-width: 768px) {
-  .form-container {
-    padding: 40px 30px;
-  }
-
-  .logo-container {
-    width: 150px;
-    height: 150px;
-  }
-
-  .decoration {
-    display: none;
-  }
 }
 </style>
