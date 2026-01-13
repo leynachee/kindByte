@@ -10,48 +10,48 @@
 
       <form @submit.prevent="handleSignup">
         <div class="input-group">
+          <label for="role">I am signing up as a...</label>
+          <select id="role" v-model="role" class="role-select">
+            <option value="beneficiary">Beneficiary</option>
+            <option value="volunteer">Volunteer</option>
+            <option value="staff">Staff</option>
+          </select>
+        </div>
+
+        <div class="input-group">
           <label for="name">Full Name</label>
           <input type="text" id="name" v-model="name" placeholder="Enter your full name" required />
           <span v-if="errors.name" class="error-message">{{ errors.name }}</span>
         </div>
 
         <div class="input-group">
-          <label for="userID">User ID</label>
-          <input type="text" id="userID" v-model="userID" placeholder="Enter your User ID" required />
-          <span v-if="errors.userID" class="error-message">{{ errors.userID }}</span>
-        </div>
-
-        <div class="input-group">
           <label for="email">Email</label>
-          <input
-            type="email"
-            id="email"
-            v-model="email"
-            placeholder="Enter a valid email address"
-            required
-          />
+          <input type="email" id="email" v-model="email" placeholder="Enter a valid email address" required />
           <span v-if="errors.email" class="error-message">{{ errors.email }}</span>
         </div>
 
         <div class="input-group">
           <label for="password">Password</label>
-          <input
-            type="password"
-            id="password"
-            v-model="password"
-            placeholder="Create a password"
-            required
-            @input="checkPasswordStrength"
-          />
-          <div v-if="password" class="password-strength" :class="passwordStrength"></div>
-          <span v-if="errors.password" class="error-message">{{ errors.password }}</span>
+          <input type="password" id="password" v-model="password" placeholder="Create a password" required />
+          
+          <div class="requirements">
+            <p :class="{ met: requirements.length }">● At least 8 characters</p>
+            <p :class="{ met: requirements.capital }">● At least one capital letter</p>
+            <p :class="{ met: requirements.special }">● At least one special character (!@#$)</p>
+          </div>
         </div>
 
-        <button type="submit" class="btn">Sign up</button>
+        <div class="input-group">
+          <label for="confirmPassword">Retype Password</label>
+          <input type="password" id="confirmPassword" v-model="confirmPassword" placeholder="Repeat your password" required />
+          <span v-if="errors.confirmPassword" class="error-message">{{ errors.confirmPassword }}</span>
+        </div>
+
+        <button type="submit" class="btn" :disabled="!isFormValid">Sign up</button>
 
         <div class="switch-text">
           Already have an account?
-          <RouterLink to="/login">Log in</RouterLink>
+          <RouterLink :to="{ name: 'Login' }">Log in</RouterLink>
         </div>
       </form>
     </div>
@@ -59,51 +59,61 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
+import { reactive, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { authStore } from '@/authStore'
 
 const router = useRouter()
 
-const userID = ref('')
 const name = ref('')
 const email = ref('')
+const role = ref('beneficiary')
 const password = ref('')
-const passwordStrength = ref('')
-const errors = reactive({ name: '', userID: '', email: '', password: '' })
+const confirmPassword = ref('')
+const errors = reactive({ name: '', email: '', confirmPassword: '' })
 
-function validateEmail(email) {
-  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  return re.test(email)
-}
+// LIVE REQUIREMENTS CHECK
+const requirements = computed(() => {
+  return {
+    length: password.value.length >= 8,
+    capital: /[A-Z]/.test(password.value),
+    special: /[!@#$%^&*(),.?":{}|<>]/.test(password.value)
+  }
+})
 
-function getPasswordStrength(password) {
-  if (password.length < 6) return 'strength-weak'
-  if (password.length < 10) return 'strength-medium'
-  return 'strength-strong'
-}
-
-function checkPasswordStrength() {
-  passwordStrength.value = getPasswordStrength(password.value)
-}
+const isFormValid = computed(() => {
+  return (
+    requirements.value.length &&
+    requirements.value.capital &&
+    requirements.value.special &&
+    password.value === confirmPassword.value &&
+    name.value.trim() !== ''
+  )
+})
 
 function handleSignup() {
-  // Reset errors
   errors.name = ''
-  errors.userID = ''
   errors.email = ''
-  errors.password = ''
+  errors.confirmPassword = ''
 
-  // Validation
-  if (name.value.trim() === '') errors.name = 'Name is required'
-  if (userID.value.trim() === '') errors.userID = 'User ID is required'
-  if (!validateEmail(email.value)) errors.email = 'Please enter a valid email'
-  if (password.value.length < 6) errors.password = 'Password must be at least 6 characters'
-
-  if (!errors.name && !errors.userID && !errors.email && !errors.password) {
-    // For now, just redirect to login
-    alert('Account created successfully!')
-    router.push('/login')
+  // Final Validation
+  if (password.value !== confirmPassword.value) {
+    errors.confirmPassword = 'Passwords do not match'
+    return
   }
+
+  // Update Store & Link to App
+  authStore.login({
+    name: name.value,
+    email: email.value,
+    role: role.value
+  })
+
+  alert('Account created successfully!')
+  
+  // Direct them to their specific home immediately
+  const target = role.value === 'staff' ? 'StaffHome' : role.value === 'volunteer' ? 'VolunteerHome' : 'UserHome'
+  router.push({ name: target })
 }
 </script>
 
@@ -269,5 +279,42 @@ function handleSignup() {
 
 .switch-text a:hover {
   text-decoration: underline;
+}
+
+.role-select {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #e2e8f0;
+  background: white;
+  border-radius: 12px;
+  font-size: 14px;
+  margin-bottom: 4px;
+  outline: none;
+}
+
+.requirements {
+  margin-top: 8px;
+  padding: 8px;
+  background: #f8fafc;
+  border-radius: 8px;
+}
+
+.requirements p {
+  font-size: 11px;
+  color: #94a3b8;
+  margin: 2px 0;
+  transition: color 0.3s;
+}
+
+.requirements p.met {
+  color: #10b981;
+  font-weight: 700;
+}
+
+.btn:disabled {
+  background: #cbd5e1;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
 }
 </style>

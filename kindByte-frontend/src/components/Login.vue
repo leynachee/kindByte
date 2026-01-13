@@ -1,135 +1,106 @@
 <template>
-    <div class="auth-page">
-        <div class="logo-container">
-            <img src="/logo.png" alt="Minds Logo" />
-        </div>
-
-        <div class="form-container">
-            <h2 class="title">Welcome Back</h2>
-            <p>Log in to your account</p>
-
-            <form @submit.prevent="handleLogin">
-                <div class="input-group">
-                    <label for="name">Full Name</label>
-                    <input type="name" id="name" v-model="name" placeholder="Enter a valid User ID" required />
-                    <span v-if="errors.name" class="error-message">{{ errors.name }}</span>
-                </div>
-
-                <div class="input-group">
-                    <label for="password">Password</label>
-                    <input type="password" id="password" v-model="password" placeholder="Enter your password"
-                        required />
-                    <span v-if="errors.password" class="error-message">{{ errors.password }}</span>
-                </div>
-
-                <div class="forgot-password">
-                    <a>
-                        <RouterLink to="/forgotpassword">Forgot password?</RouterLink>
-                    </a>
-                </div>
-
-                <!-- <div class="checkbox-group">
-                    <input type="checkbox" id="rememberMe" v-model="rememberMe" />
-                    <label for="rememberMe">Remember me</label>
-                </div> -->
-
-                <button type="submit" class="btn">Log in</button>
-
-                <div class="switch-text">
-                    Don’t have an account?
-                    <a>
-                        <RouterLink to="/signup">Sign up</RouterLink>
-                    </a>
-                </div>
-            </form>
-        </div>
+  <div class="auth-page">
+    <div class="logo-container">
+      <img src="@/assets/minds-logo.png" alt="Minds Logo" />
     </div>
+
+    <div class="form-container">
+      <h2 class="title">Welcome Back</h2>
+      <p>Log in to your account</p>
+
+      <form @submit.prevent="handleLogin">
+        <div class="input-group">
+          <label for="role">I am a...</label>
+          <select id="role" v-model="role" class="role-select">
+            <option value="beneficiary">Beneficiary</option>
+            <option value="volunteer">Volunteer</option>
+            <option value="staff">Staff</option>
+          </select>
+        </div>
+
+        <div class="input-group">
+          <label for="email">Email Address</label>
+          <input 
+            type="email" 
+            id="email" 
+            v-model="email" 
+            placeholder="example@minds.org.sg" 
+            required 
+          />
+          <span v-if="errors.email" class="error-message">{{ errors.email }}</span>
+        </div>
+
+        <div class="input-group">
+          <label for="password">Password</label>
+          <input 
+            type="password" 
+            id="password" 
+            v-model="password" 
+            placeholder="Enter your password" 
+            required 
+          />
+          <span v-if="errors.password" class="error-message">{{ errors.password }}</span>
+        </div>
+
+        <div class="forgot-password">
+          <RouterLink :to="{ name: 'ForgotPassword' }">Forgot password?</RouterLink>
+        </div>
+
+        <button type="submit" class="btn">Log in</button>
+
+        <div class="switch-text">
+          Don’t have an account?
+          <RouterLink :to="{ name: 'Signup' }">Sign up</RouterLink>
+        </div>
+      </form>
+    </div>
+  </div>
 </template>
 
 <script setup>
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-// import axios from 'axios'
+import { authStore } from '@/authStore' 
 
 const router = useRouter()
 
-const name = ref('')
+const email = ref('')
 const password = ref('')
-// const rememberMe = ref(false)
+const role = ref('beneficiary')
 const errors = reactive({ email: '', password: '' })
 
-// function validateEmail(email) {
-//     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-//     return re.test(email)
-// }
+// Simple Email Validation Helper
+const isValidEmail = (val) => {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)
+}
 
-// async function handleLogin() {
-//     // reset errors
-//     errors.name = ''
-//     errors.password = ''
+async function handleLogin() {
+  errors.email = ''
+  errors.password = ''
 
-//     // client-side validation
-//     if (!validatename(name.value)) {
-//         errors.name = 'Please enter a valid name'
-//     }
-//     if (password.value.trim() === '') {
-//         errors.password = 'Password is required'
-//     }
+  // 1. Validation
+  if (!isValidEmail(email.value)) {
+    errors.email = 'Please enter a valid email address'
+    return
+  }
 
-//     if (!errors.name && !errors.password) {
-//         try {
-//             const loginBody = {
-//                 name: name.value,
-//                 password: password.value,
-//             }
+  // 2. Update the Global Store 
+  // We store the email here so other pages (like Profile) can show it
+  authStore.login({
+    email: email.value,
+    role: role.value,
+    displayName: email.value.split('@')[0] // Temporary name from email
+  })
 
-//             const response = await axios.post('http://localhost:8000/api/auth/login', loginBody, {
-//                 headers: { 'Content-Type': 'application/json' },
-//             })
-
-//             if (response.status === 200) {
-//                 const { token, user } = response.data
-
-//                 if (!user || !token) {
-//                     throw new Error('Invalid server response: missing user or token')
-//                 }
-
-//                 // Save token + user info
-//                 sessionStorage.setItem('authToken', token)
-//                 sessionStorage.setItem('user_id', user.id)
-//                 sessionStorage.setItem('fridgeId', user.fridge_id)
-//                 sessionStorage.setItem('profile_pic', user.profile_pic || '../public/profile-icon.png')
-
-//                 // redirect after a short delay
-//                 setTimeout(() => router.push('/userhome'), 1000)
-//             }
-//         } catch (err) {
-//             console.error('❌ Login failed:', err)
-
-//             // Axios error handling
-//             if (err.response) {
-//                 const status = err.response.status
-//                 const msg = err.response.data?.message || ''
-
-//                 if (status === 404) {
-//                     errors.name = 'No account found with this name'
-//                 } else if (status === 401) {
-//                     errors.password = 'Incorrect password'
-//                 } else if (status === 400) {
-//                     errors.name = msg || 'Invalid request'
-//                 } else if (status >= 500) {
-//                     errors.name = 'Server error, please try again later'
-//                 } else {
-//                     errors.password = 'Login failed, please check your credentials'
-//                 }
-//             } else {
-//                 // No response from server
-//                 errors.name = 'Unable to connect to server. Please try again later.'
-//             }
-//         }
-//     }
-// }
-
+  // 3. Redirect based on role
+  if (role.value === 'staff') {
+    router.push({ name: 'StaffHome' })
+  } else if (role.value === 'volunteer') {
+    router.push({ name: 'VolunteerHome' })
+  } else {
+    router.push({ name: 'UserHome' })
+  }
+}
 </script>
 
 <style scoped>
@@ -291,5 +262,34 @@ const errors = reactive({ email: '', password: '' })
     }
     
     /* Remove all the decorative elements and body styles that conflict with App.vue */
- 
+
+    .role-select {
+  width: 100%;
+  padding: 14px 18px;
+  border: none;
+  background: #f1f5f9;
+  border-radius: 12px;
+  font-size: 14px;
+  color: #333;
+  outline: none;
+  appearance: none; /* Removes default arrow */
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 15px center;
+  background-size: 15px;
+}
+
+.role-select:focus {
+  background-color: #e2e8f0;
+}
+
+/* Ensure links don't have default underline unless hovered */
+a {
+    text-decoration: none;
+}
+
+.switch-text {
+    margin-top: 25px;
+}
 </style>
+ 

@@ -1,70 +1,62 @@
 <template>
-    <div class="auth-page">
-      <div class="logo-container">
-        <img src="@/assets/minds-logo.png" alt="Minds Logo" />
-      </div>
-  
-      <div class="form-container">
-        <h2 class="title">Forgot Password?</h2>
-        <p>Enter your User ID and email to receive a password reset link.</p>
-  
-        <form @submit.prevent="handleForgotPassword">
-          <div class="input-group">
-            <label for="userID">User ID</label>
-            <input type="text" id="userID" v-model="userID" placeholder="Enter your User ID" required />
-            <span v-if="errors.userID" class="error-message">{{ errors.userID }}</span>
-          </div>
-  
-          <div class="input-group">
-            <label for="email">Email</label>
-            <input type="email" id="email" v-model="email" placeholder="Enter your email" required />
-            <span v-if="errors.email" class="error-message">{{ errors.email }}</span>
-          </div>
-  
-          <button type="submit" class="btn">Send Reset Link</button>
-  
-          <div class="switch-text">
-            Remember your password?
-            <RouterLink to="/login">Log in</RouterLink>
-          </div>
-        </form>
-      </div>
+  <div class="auth-page">
+    <div class="logo-container">
+      <img src="@/assets/minds-logo.png" alt="Minds Logo" />
     </div>
-  </template>
-  
-  <script setup>
-  import { reactive, ref } from 'vue'
+
+    <div class="form-container">
+      <h2 class="title">Forgot Password?</h2>
+      <p>Enter your email address and we'll send you a link to reset your password.</p>
+
+      <form @submit.prevent="handleForgotPassword">
+        <div class="input-group">
+          <label for="email">Email Address</label>
+          <input 
+            type="email" 
+            id="email" 
+            v-model="email" 
+            placeholder="example@minds.org.sg" 
+            required 
+          />
+          <span v-if="errors.email" class="error-message">{{ errors.email }}</span>
+        </div>
+
+        <button type="submit" class="btn">Send Reset Link</button>
+
+        <div class="switch-text">
+          Remember your password?
+          <RouterLink :to="{ name: 'Login' }">Log in</RouterLink>
+        </div>
+      </form>
+    </div>
+  </div>
+</template>
+
+<script setup>
+  import { ref, reactive } from 'vue'
   import { useRouter } from 'vue-router'
   
   const router = useRouter()
-  
-  const userID = ref('')
   const email = ref('')
-  const errors = reactive({ userID: '', email: '' })
-  
-  function validateEmail(email) {
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    return re.test(email)
-  }
+  const successMessage = ref('') // New ref for the message
+  const errors = reactive({ email: '' })
   
   function handleForgotPassword() {
-    // Reset errors
-    errors.userID = ''
     errors.email = ''
   
-    // Validation
-    if (userID.value.trim() === '') {
-      errors.userID = 'User ID is required'
-      return
-    }
-    if (!validateEmail(email.value)) {
+    if (!email.value.includes('@')) {
       errors.email = 'Please enter a valid email'
       return
     }
   
-    // For now, just show success message
-    alert('Password reset link has been sent to your email!')
-    router.push('/login')
+    // 1. Set the success message
+    successMessage.value = 'Reset link sent! Redirecting...'
+  
+    // 2. Wait 2 seconds so the user can see the message, then redirect
+    setTimeout(() => {
+      successMessage.value = ''
+      router.push({ name: 'Login' })
+    }, 2000)
   }
   </script>
   
@@ -210,4 +202,27 @@
   .switch-text a:hover {
     text-decoration: underline;
   }
+
+  .toast-notification {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #10b981; /* Green success color */
+  color: white;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  z-index: 100;
+  width: 90%;
+  text-align: center;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from { transform: translate(-50%, -20px); opacity: 0; }
+  to { transform: translate(-50%, 0); opacity: 1; }
+}
   </style>
