@@ -9,14 +9,17 @@
         <span class="icon">🏠</span>
         <span class="label">Home</span>
       </router-link>
-      <router-link to="/calendar" class="nav-item">
+      
+      <router-link to="/staffhome" class="nav-item">
         <span class="icon">📅</span>
-        <span class="label">Events</span>
+        <span class="label">Calendar</span>
       </router-link>
+      
       <router-link to="/my-plans" class="nav-item">
         <span class="icon">📋</span>
         <span class="label">My Plans</span>
       </router-link>
+      
       <router-link to="/profile" class="nav-item">
         <span class="icon">👤</span>
         <span class="label">Profile</span>
@@ -38,7 +41,7 @@ body {
 }
 
 .mobile-wrapper {
-  max-width: 430px; /* Constraints for desktop viewing */
+  max-width: 430px; 
   margin: 0 auto;
   background: white;
   min-height: 100vh;
@@ -47,7 +50,7 @@ body {
 }
 
 .content-view {
-  padding-bottom: 100px; /* Space for navbar */
+  padding-bottom: 100px; 
 }
 
 .bottom-nav {
@@ -77,6 +80,6 @@ body {
   color: var(--minds-blue);
 }
 
-.nav-item .icon { font-size: 26px; }
-.nav-item .label { font-size: 12px; font-weight: 700; margin-top: 4px; }
+.nav-item .icon { font-size: 24px; margin-bottom: 4px; }
+.nav-item .label { font-size: 11px; font-weight: 600; }
 </style>
