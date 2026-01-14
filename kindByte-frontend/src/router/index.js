@@ -92,6 +92,12 @@ const router = createRouter({
       component: () => import('../components/EditEvent.vue'),
       meta: { requiresAuth: true, roles: ['staff'] }
     },
+    {
+      path: '/staff/calendar',
+      name: 'Calendar',
+      component: () => import('../views/StaffHomeView.vue'), 
+      meta: { public: true }
+    },
     
     // Shared Routes
     {
