@@ -73,12 +73,7 @@ const router = createRouter({
       component: () => import('../components/StaffHome.vue'),
       meta: { requiresAuth: true, roles: ['staff'] }
     },
-    { 
-      path: '/staff/users', 
-      name: 'UserManagement',
-      component: () => import('../components/UserManagement.vue'),
-      meta: { requiresAuth: true, roles: ['staff'] }
-    },
+
     { 
       path: '/staff/events', 
       name: 'StaffEvents',
@@ -123,6 +118,28 @@ const router = createRouter({
       component: () => import('../views/RegisterEvent.vue'),
       meta: { requiresAuth: true, roles: ['beneficiary', 'caregiver', 'volunteer'] }
     },
+
+    {
+      path: '/manage-events',
+      name: 'ManageEvents',
+      component: () => import('@/components/ManageEvents.vue'),
+      meta: { requiresAuth: true, roles: ['staff'] }
+    },
+
+    {
+      path: '/user-management',
+      name: 'UserManagement',
+      component: () => import('@/components/UserManagement.vue'),
+      meta: { requiresAuth: true, roles: ['staff'] }
+
+    }, 
+    
+    {
+      path: '/attendance-report',
+      name: 'AttendanceReport',
+      component: () => import('@/components/AttendanceReport.vue'),
+      meta: { requiresAuth: true, roles: ['staff'] }
+    }, 
   ],
 })
 

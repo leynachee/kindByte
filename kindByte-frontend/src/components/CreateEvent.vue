@@ -1,6 +1,5 @@
 <template>
   <div class="page-container">
-    <!-- Header -->
     <div class="page-header">
       <h1>Create Event</h1>
       <p class="subtitle">Fill in the details for the new event</p>
@@ -8,355 +7,205 @@
 
     <form @submit.prevent="handleSubmit" class="form-content" novalidate>
       
-      <!-- Event Details Section -->
       <div class="section">
         <h3 class="section-title">📋 Event Details</h3>
         <div class="info-card">
           <div class="form-group" :class="{ 'has-error': isAttempted && !eventData.name }">
             <label class="form-label required">Event Name</label>
-            <input 
-              v-model="eventData.name" 
-              type="text" 
-              class="form-input"
-              placeholder="e.g., Art Workshop 2026" 
-            />
+            <input v-model="eventData.name" type="text" class="form-input" placeholder="e.g., Art Workshop 2026" />
             <span v-if="isAttempted && !eventData.name" class="error-text">Event name is required</span>
           </div>
 
           <div class="form-group" :class="{ 'has-error': isAttempted && !eventData.description }">
             <label class="form-label required">Description</label>
-            <textarea 
-              v-model="eventData.description" 
-              class="form-input form-textarea"
-              placeholder="Tell attendees what this event is about..." 
-              rows="3"
-            ></textarea>
+            <textarea v-model="eventData.description" class="form-input form-textarea" placeholder="Tell attendees what this event is about..." rows="3"></textarea>
             <span v-if="isAttempted && !eventData.description" class="error-text">Description is required</span>
           </div>
 
-          <div class="form-group" :class="{ 'has-error': isAttempted && !eventData.date }">
-            <label class="form-label required">Date & Time</label>
-            <input 
-              v-model="eventData.date" 
-              type="datetime-local" 
-              class="form-input"
-            />
-            <span v-if="isAttempted && !eventData.date" class="error-text">Please select a date</span>
+          <div class="form-row">
+            <div class="form-group" :class="{ 'has-error': isAttempted && !eventData.date }">
+              <label class="form-label required">Date & Time</label>
+              <input v-model="eventData.date" type="datetime-local" class="form-input" />
+            </div>
+            <div class="form-group">
+              <label class="form-label required">Category</label>
+              <select v-model="eventData.category" class="form-input form-select">
+                <option value="" disabled>Select Category</option>
+                <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
+              </select>
+            </div>
           </div>
 
           <div class="form-row">
-            <div class="form-group" :class="{ 'has-error': isAttempted && (!eventData.duration || eventData.duration <= 0) }">
+            <div class="form-group">
               <label class="form-label required">Duration (hrs)</label>
-              <input 
-                v-model.number="eventData.duration" 
-                type="number" 
-                class="form-input"
-                min="0.5" 
-                step="0.5" 
-              />
+              <input v-model.number="eventData.duration" type="number" class="form-input" min="0.5" step="0.5" />
             </div>
-            <div class="form-group" :class="{ 'has-error': isAttempted && !eventData.maxCapacity }">
+            <div class="form-group">
               <label class="form-label required">Capacity</label>
-              <input 
-                v-model.number="eventData.maxCapacity" 
-                type="number" 
-                class="form-input"
-                min="1" 
-                placeholder="50" 
-              />
+              <input v-model.number="eventData.maxCapacity" type="number" class="form-input" min="1" placeholder="50" />
             </div>
           </div>
 
           <div class="form-group" :class="{ 'has-error': isAttempted && !eventData.location }">
             <label class="form-label required">Location</label>
-            <input 
-              v-model="eventData.location" 
-              type="text" 
-              class="form-input"
-              placeholder="e.g., MTC Central" 
-            />
-            <span v-if="isAttempted && !eventData.location" class="error-text">Location is required</span>
+            <input v-model="eventData.location" type="text" class="form-input" placeholder="e.g., MTC Central" />
           </div>
-
-
 
           <div class="form-group">
             <label class="form-label">Event Image URL</label>
-            <input 
-              v-model="eventData.imageUrl" 
-              type="url" 
-              class="form-input"
-              placeholder="https://example.com/image.jpg" 
-            />
-            <span class="hint">Optional - Leave empty for default</span>
+            <input v-model="eventData.imageUrl" type="url" class="form-input" placeholder="https://example.com/image.jpg" />
           </div>
         </div>
       </div>
 
-      <!-- Registration Questions Section -->
       <div class="section">
         <h3 class="section-title">❓ Registration Questions</h3>
-        
         <div v-if="questions.length === 0" class="empty-state">
           <p>No custom questions yet.</p>
-          <p class="hint">Add questions to collect info during registration.</p>
         </div>
 
         <div v-else class="questions-list">
-          <div 
-            v-for="(question, index) in questions" 
-            :key="question.id" 
-            class="question-card"
-            :class="{ 'has-error': isAttempted && !question.text }"
-          >
+          <div v-for="(question, index) in questions" :key="question.id" class="question-card">
             <div class="question-header">
               <span class="question-number">Q{{ index + 1 }}</span>
-              <button type="button" @click="deleteQuestion(index)" class="btn-delete">
-                Remove
-              </button>
+              <button type="button" @click="deleteQuestion(index)" class="btn-delete">Remove</button>
             </div>
-
             <div class="form-group">
-              <input 
-                v-model="question.text" 
-                type="text" 
-                class="form-input"
-                placeholder="Enter your question..." 
-              />
-              <span v-if="isAttempted && !question.text" class="error-text">Question text is required</span>
+              <input v-model="question.text" type="text" class="form-input" placeholder="Enter your question..." />
             </div>
-
             <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">Type</label>
-                <select v-model="question.type" @change="updateQuestionType(index)" class="form-input form-select">
-                  <option value="text">Short Text</option>
-                  <option value="textarea">Long Text</option>
-                  <option value="mcq">Single Choice</option>
-                  <option value="checkbox">Multiple Choice</option>
-                  <option value="dropdown">Dropdown</option>
-                </select>
-              </div>
-              <div class="form-group checkbox-group">
-                <label class="checkbox-label">
-                  <input v-model="question.required" type="checkbox" />
-                  <span>Required</span>
-                </label>
-              </div>
-            </div>
-
-            <div v-if="['mcq', 'checkbox', 'dropdown'].includes(question.type)" class="options-container">
-              <label class="form-label">Options</label>
-              <div v-for="(option, optIndex) in question.options" :key="optIndex" class="option-row">
-                <span class="option-number">{{ optIndex + 1 }}.</span>
-                <input 
-                  v-model="question.options[optIndex]" 
-                  type="text" 
-                  class="form-input"
-                  :placeholder="'Option ' + (optIndex + 1)" 
-                />
-                <button 
-                  type="button" 
-                  @click="removeOption(index, optIndex)" 
-                  v-if="question.options.length > 2" 
-                  class="btn-remove-option"
-                >
-                  ✕
-                </button>
-              </div>
-              <button type="button" @click="addOption(index)" class="btn-add-option">
-                + Add Option
-              </button>
+              <select v-model="question.type" @change="updateQuestionType(index)" class="form-input form-select">
+                <option value="text">Short Text</option>
+                <option value="mcq">Single Choice</option>
+                <option value="checkbox">Multiple Choice</option>
+              </select>
+              <label class="checkbox-label"><input v-model="question.required" type="checkbox" /> Required</label>
             </div>
           </div>
         </div>
-
-        <button type="button" @click="addQuestion" class="btn-secondary">
-          + Add Question
-        </button>
+        <button type="button" @click="addQuestion" class="btn-secondary">+ Add Question</button>
       </div>
 
-      <!-- Validation Summary -->
-      <div v-if="isAttempted && !isFormValid" class="validation-summary">
-        ⚠️ Please fill in all required fields
-      </div>
-
-      <!-- Action Buttons -->
+      <div v-if="errorMessage" class="validation-summary">{{ errorMessage }}</div>
+      
       <div class="action-section">
-        <button type="button" @click="previewEvent" class="btn-preview">
-          👁️ Preview
-        </button>
+        <button type="button" @click="previewEvent" class="btn-preview">👁️ Preview</button>
         <button type="submit" class="btn-primary" :disabled="submitting">
-          {{ submitting ? 'Creating...' : '✓ Create Event' }}
+          {{ submitting ? 'Saving...' : '✓ Create Event' }}
         </button>
       </div>
-
-      <button type="button" @click="goBack" class="btn-cancel">
-        Cancel
-      </button>
+      <button type="button" @click="goBack" class="btn-cancel">Cancel</button>
     </form>
 
-    <!-- Preview Modal -->
-    <teleport to="body">
-      <transition name="fade">
-        <div v-if="showPreview" class="modal-overlay" @click="closePreview">
-          <div class="modal-content" @click.stop>
-            <div class="modal-header">
-              <h2>Event Preview</h2>
-              <button @click="closePreview" class="btn-close">✕</button>
-            </div>
-            <div class="modal-body">
-              <div v-if="eventData.imageUrl" class="preview-image">
-                <img :src="eventData.imageUrl" alt="Event Banner" />
-              </div>
-              <h3 class="preview-title">{{ eventData.name || 'Untitled Event' }}</h3>
-              <div class="preview-meta">
-                <span class="meta-item">📍 {{ eventData.location || 'No location' }}</span>
-                <span class="meta-item">📅 {{ formatPreviewDate(eventData.date) }}</span>
-                <span class="meta-item">👥 {{ eventData.maxCapacity || '0' }} spots</span>
-                <span class="meta-item">📂 {{ eventData.category || 'Uncategorized' }}</span>
-              </div>
-              <div class="preview-description">
-                <h4>About this event</h4>
-                <p>{{ eventData.description || 'No description provided.' }}</p>
-              </div>
-              <div v-if="questions.length > 0" class="preview-questions">
-                <h4>Registration Questions ({{ questions.length }})</h4>
-                <ul>
-                  <li v-for="(q, i) in questions" :key="i">
-                    {{ q.text || 'Untitled question' }}
-                    <span v-if="q.required" class="required-badge">Required</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-      </transition>
-    </teleport>
-  </div>
+    </div>
 </template>
 
-<script>
+<script setup>
 import { ref, reactive, computed } from 'vue';
 import { useRouter } from 'vue-router';
+// Firebase Imports
+import { db } from '@/firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
-export default {
-  name: 'CreateEvent',
-  setup() {
-    const router = useRouter();
-    
-    const isAttempted = ref(false);
-    const submitting = ref(false);
-    const showPreview = ref(false);
-    const categories = ['Arts & Crafts', 'Sports', 'Music', 'Education', 'Social', 'Wellness', 'Technology', 'Other'];
+const router = useRouter();
+const isAttempted = ref(false);
+const submitting = ref(false);
+const showPreview = ref(false);
+const errorMessage = ref('');
 
-    const eventData = reactive({
-      name: '',
-      description: '',
-      date: '',
-      duration: 2,
-      location: '',
-      maxCapacity: null,
-      category: '',
-      imageUrl: ''
-    });
+const categories = ['Arts & Crafts', 'Sports', 'Music', 'Education', 'Social', 'Wellness', 'Technology', 'Other'];
 
-    const questions = ref([]);
-    let questionIdCounter = 0;
+const eventData = reactive({
+  name: '',
+  description: '',
+  date: '',
+  duration: 2,
+  location: '',
+  maxCapacity: null,
+  category: '',
+  imageUrl: ''
+});
 
-    const isFormValid = computed(() => {
-      const basicInfoValid = eventData.name && 
-                             eventData.description && 
-                             eventData.date && 
-                             eventData.location && 
-                             eventData.maxCapacity && 
-                             eventData.category;
-      
-      const questionsValid = questions.value.every(q => q.text.trim() !== '');
-      
-      return basicInfoValid && questionsValid;
-    });
+const questions = ref([]);
+let questionIdCounter = 0;
 
-    const addQuestion = () => {
-      questions.value.push({
-        id: ++questionIdCounter,
-        text: '',
-        type: 'text',
-        required: false,
-        options: []
-      });
-    };
+const isFormValid = computed(() => {
+  return (
+    eventData.name && 
+    eventData.description && 
+    eventData.date && 
+    eventData.location && 
+    eventData.maxCapacity && 
+    eventData.category &&
+    questions.value.every(q => q.text.trim() !== '')
+  );
+});
 
-    const deleteQuestion = (index) => {
-      questions.value.splice(index, 1);
-    };
+const addQuestion = () => {
+  questions.value.push({
+    id: ++questionIdCounter,
+    text: '',
+    type: 'text',
+    required: false,
+    options: []
+  });
+};
 
-    const updateQuestionType = (index) => {
-      const q = questions.value[index];
-      if (['mcq', 'checkbox', 'dropdown'].includes(q.type)) {
-        if (!q.options || q.options.length < 2) {
-          q.options = ['Option 1', 'Option 2'];
-        }
-      } else {
-        q.options = [];
-      }
-    };
+const deleteQuestion = (index) => questions.value.splice(index, 1);
 
-    const addOption = (idx) => {
-      questions.value[idx].options.push(`Option ${questions.value[idx].options.length + 1}`);
-    };
-
-    const removeOption = (qIdx, oIdx) => {
-      questions.value[qIdx].options.splice(oIdx, 1);
-    };
-
-    const formatPreviewDate = (str) => {
-      if (!str) return 'Date TBD';
-      return new Date(str).toLocaleString('en-US', {
-        weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-      });
-    };
-
-    const previewEvent = () => {
-      showPreview.value = true;
-    };
-
-    const closePreview = () => { 
-      showPreview.value = false; 
-    };
-
-    const goBack = () => {
-      if (confirm('Discard changes?')) router.go(-1);
-    };
-
-    const handleSubmit = async () => {
-      isAttempted.value = true;
-
-      if (!isFormValid.value) {
-        return;
-      }
-
-      submitting.value = true;
-      try {
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        console.log('Event Created:', { ...eventData, questions: questions.value });
-        alert('Event created successfully!');
-        router.push('/events');
-      } catch (err) {
-        alert('Error creating event.');
-      } finally {
-        submitting.value = false;
-      }
-    };
-
-    return {
-      eventData, questions, submitting, showPreview, isAttempted, isFormValid,
-      categories, addQuestion, deleteQuestion, updateQuestionType, 
-      addOption, removeOption, formatPreviewDate, previewEvent, 
-      closePreview, handleSubmit, goBack
-    };
+const updateQuestionType = (index) => {
+  const q = questions.value[index];
+  if (['mcq', 'checkbox'].includes(q.type) && q.options.length < 2) {
+    q.options = ['Option 1', 'Option 2'];
   }
+};
+
+const handleSubmit = async () => {
+  isAttempted.value = true;
+  errorMessage.value = '';
+
+  if (!isFormValid.value) {
+    errorMessage.value = "Please fill in all required fields.";
+    return;
+  }
+
+  submitting.value = true;
+  
+  try {
+    const eventPayload = {
+      ...eventData,
+      questions: questions.value.map(q => ({
+        text: q.text,
+        type: q.type,
+        required: q.required,
+        options: q.options || []
+      })),
+      createdAt: serverTimestamp(),
+      attendeeCount: 0,
+      status: 'active'
+    };
+
+    // Save to Firestore
+    await addDoc(collection(db, "events"), eventPayload);
+    
+    // Redirect to Staff Calendar/Home
+    router.push({ name: 'StaffHome' }); 
+    
+  } catch (err) {
+    console.error("Error adding event: ", err);
+    errorMessage.value = "Failed to save event. Check your connection.";
+  } finally {
+    submitting.value = false;
+  }
+};
+
+const goBack = () => { if (confirm('Discard changes?')) router.go(-1); };
+const previewEvent = () => { showPreview.value = true; };
+const closePreview = () => { showPreview.value = false; };
+const formatPreviewDate = (str) => {
+  if (!str) return 'Date TBD';
+  return new Date(str).toLocaleString();
 };
 </script>
 
