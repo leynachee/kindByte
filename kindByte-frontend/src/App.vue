@@ -84,8 +84,6 @@ const getHomePath = () => {
   switch (userRole.value) {
     case 'beneficiary':
       return '/userhome';
-    case 'caregiver':
-      return '/caregiverhome';
     case 'staff':
       return '/staffhome';
     case 'volunteer':
