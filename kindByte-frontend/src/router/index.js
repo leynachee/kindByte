@@ -95,7 +95,7 @@ const router = createRouter({
     {
       path: '/staff/calendar',
       name: 'Calendar',
-      component: () => import('../views/StaffHomeView.vue'), 
+      component: () => import('../views/StaffCalendar.vue'), 
       meta: { public: true }
     },
     
