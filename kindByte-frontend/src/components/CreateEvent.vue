@@ -11,9 +11,9 @@
         <h3 class="section-title">📋 Event Details</h3>
         <div class="info-card">
           <div class="form-group" :class="{ 'has-error': isAttempted && !eventData.name }">
-            <label class="form-label required">Event Name</label>
+            <label class="form-label required">Title</label>
             <input v-model="eventData.name" type="text" class="form-input" placeholder="e.g., Art Workshop 2026" />
-            <span v-if="isAttempted && !eventData.name" class="error-text">Event name is required</span>
+            <span v-if="isAttempted && !eventData.name" class="error-text">TItle is required</span>
           </div>
 
           <div class="form-group" :class="{ 'has-error': isAttempted && !eventData.description }">
@@ -22,39 +22,33 @@
             <span v-if="isAttempted && !eventData.description" class="error-text">Description is required</span>
           </div>
 
-          <div class="form-row">
-            <div class="form-group" :class="{ 'has-error': isAttempted && !eventData.date }">
-              <label class="form-label required">Date & Time</label>
-              <input v-model="eventData.date" type="datetime-local" class="form-input" />
-            </div>
-            <div class="form-group">
-              <label class="form-label required">Category</label>
-              <select v-model="eventData.category" class="form-input form-select">
-                <option value="" disabled>Select Category</option>
-                <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
-              </select>
-            </div>
+          <div class="form-group" :class="{ 'has-error': isAttempted && !eventData.date }">
+            <label class="form-label required">Start Date & Time</label>
+            <input v-model="eventData.startTime" type="datetime-local" class="form-input" />
           </div>
 
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label required">Duration (hrs)</label>
-              <input v-model.number="eventData.duration" type="number" class="form-input" min="0.5" step="0.5" />
-            </div>
-            <div class="form-group">
+          <div class="form-group" :class="{ 'has-error': isAttempted && !eventData.date }">
+            <label class="form-label required">End Date & Time</label>
+            <input v-model="eventData.endTime" type="datetime-local" class="form-input" />
+          </div>
+
+          <div class="form-group">
               <label class="form-label required">Capacity</label>
-              <input v-model.number="eventData.maxCapacity" type="number" class="form-input" min="1" placeholder="50" />
-            </div>
+              <input v-model.number="eventData.maxCapacity" type="number" class="form-input" min="0" placeholder="50" />
           </div>
 
           <div class="form-group" :class="{ 'has-error': isAttempted && !eventData.location }">
             <label class="form-label required">Location</label>
             <input v-model="eventData.location" type="text" class="form-input" placeholder="e.g., MTC Central" />
+            <span v-if="isAttempted && !eventData.location" class="error-text">Location is required</span>
           </div>
 
           <div class="form-group">
-            <label class="form-label">Event Image URL</label>
-            <input v-model="eventData.imageUrl" type="url" class="form-input" placeholder="https://example.com/image.jpg" />
+              <label class="form-label required">Category</label>
+              <select v-model="eventData.category" class="form-input form-select">
+                <option value="" disabled>Select Category</option>
+                <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
+              </select>
           </div>
         </div>
       </div>
@@ -72,15 +66,41 @@
               <button type="button" @click="deleteQuestion(index)" class="btn-delete">Remove</button>
             </div>
             <div class="form-group">
-              <input v-model="question.text" type="text" class="form-input" placeholder="Enter your question..." />
+              <input v-model="question.description" type="text" class="form-input" placeholder="Enter your question..." />
             </div>
             <div class="form-row">
               <select v-model="question.type" @change="updateQuestionType(index)" class="form-input form-select">
-                <option value="text">Short Text</option>
-                <option value="mcq">Single Choice</option>
-                <option value="checkbox">Multiple Choice</option>
+                  <option value="text">Short Text</option>
+                  <option value="textarea">Long Text</option>
+                  <option value="mcq">Single Choice</option>
+                  <option value="checkbox">Multiple Choice</option>
+                  <option value="dropdown">Dropdown</option>
               </select>
-              <label class="checkbox-label"><input v-model="question.required" type="checkbox" /> Required</label>
+              <label class="checkbox-label"><input v-model="question.isCompulsory" type="checkbox" /> Required</label>
+            </div>
+
+            <div v-if="['mcq', 'checkbox', 'dropdown'].includes(question.type)" class="options-container">
+              <label class="form-label">Options</label>
+              <div v-for="(option, optIndex) in question.options" :key="optIndex" class="option-row">
+                <span class="option-number">{{ optIndex + 1 }}.</span>
+                <input 
+                  v-model="question.options[optIndex]" 
+                  type="text" 
+                  class="form-input"
+                  :placeholder="'Option ' + (optIndex + 1)" 
+                />
+                <button 
+                  type="button" 
+                  @click="removeOption(index, optIndex)" 
+                  v-if="question.options.length > 2" 
+                  class="btn-remove-option"
+                >
+                  ✕
+                </button>
+              </div>
+              <button type="button" @click="addOption(index)" class="btn-add-option">
+                + Add Option
+              </button>
             </div>
           </div>
         </div>
@@ -106,7 +126,7 @@ import { ref, reactive, computed } from 'vue';
 import { useRouter } from 'vue-router';
 // Firebase Imports
 import { db } from '@/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, collection, addDoc, writeBatch, Timestamp } from 'firebase/firestore';
 
 const router = useRouter();
 const isAttempted = ref(false);
@@ -114,17 +134,16 @@ const submitting = ref(false);
 const showPreview = ref(false);
 const errorMessage = ref('');
 
-const categories = ['Arts & Crafts', 'Sports', 'Music', 'Education', 'Social', 'Wellness', 'Technology', 'Other'];
+const categories = ['Outings', 'MTC Office', 'Swimming Complex', 'Nature Walks', 'Gym and Dance', 'Reading'];
 
 const eventData = reactive({
   name: '',
   description: '',
-  date: '',
-  duration: 2,
+  startTime: '',
+  endTime: '',
   location: '',
   maxCapacity: null,
   category: '',
-  imageUrl: ''
 });
 
 const questions = ref([]);
@@ -134,79 +153,84 @@ const isFormValid = computed(() => {
   return (
     eventData.name && 
     eventData.description && 
-    eventData.date && 
+    eventData.startTime &&
+    eventData.endTime && 
     eventData.location && 
     eventData.maxCapacity && 
     eventData.category &&
-    questions.value.every(q => q.text.trim() !== '')
+    questions.value.every(q => q.description.trim() !== '')
   );
 });
 
 const addQuestion = () => {
   questions.value.push({
-    id: ++questionIdCounter,
-    text: '',
+    description: '',
     type: 'text',
-    required: false,
+    isCompulsory: false,
     options: []
   });
 };
 
 const deleteQuestion = (index) => questions.value.splice(index, 1);
-
+const addOption = (index) => questions.value[index].options.push(`Option ${questions.value[index].options.length + 1}`);
+const removeOption = (qIdx, oIdx) => questions.value[qIdx].options.splice(oIdx, 1);
 const updateQuestionType = (index) => {
   const q = questions.value[index];
   if (['mcq', 'checkbox'].includes(q.type) && q.options.length < 2) {
     q.options = ['Option 1', 'Option 2'];
   }
 };
-
 const handleSubmit = async () => {
   isAttempted.value = true;
-  errorMessage.value = '';
-
   if (!isFormValid.value) {
     errorMessage.value = "Please fill in all required fields.";
     return;
   }
 
   submitting.value = true;
-  
-  try {
-    const eventPayload = {
-      ...eventData,
-      questions: questions.value.map(q => ({
-        text: q.text,
-        type: q.type,
-        required: q.required,
-        options: q.options || []
-      })),
-      createdAt: serverTimestamp(),
-      attendeeCount: 0,
-      status: 'active'
-    };
+  const batch = writeBatch(db);
 
-    // Save to Firestore
-    await addDoc(collection(db, "events"), eventPayload);
-    
-    // Redirect to Staff Calendar/Home
+  try {
+    // 1. Create Question Documents and get their IDs
+    const questionIDs = [];
+    questions.value.forEach(q => {
+      const qRef = doc(collection(db, "questions")); // Generate random ID
+      questionIDs.push(qRef.id);
+      batch.set(qRef, {
+        description: q.description,
+        type: q.type,
+        isCompulsory: q.isCompulsory,
+        options: q.options
+      });
+    });
+
+    // 2. Create Event Document
+    const eventRef = doc(collection(db, "events"));
+    batch.set(eventRef, {
+      title: eventData.name,
+      description: eventData.description,
+      location: eventData.location,
+      maxCount: eventData.maxCapacity,
+      type: eventData.category,
+      startTime: Timestamp.fromDate(new Date(eventData.startTime)),
+      endTime: Timestamp.fromDate(new Date(eventData.endTime)),
+      questionID: questionIDs, // Store the array of IDs
+      imageUrl: eventData.imageUrl || '',
+      createdAt: Timestamp.now()
+    });
+
+    await batch.commit();
     router.push({ name: 'StaffHome' }); 
     
   } catch (err) {
     console.error("Error adding event: ", err);
-    errorMessage.value = "Failed to save event. Check your connection.";
+    errorMessage.value = "Failed to save event.";
   } finally {
     submitting.value = false;
   }
 };
 
 const goBack = () => { if (confirm('Discard changes?')) router.go(-1); };
-const previewEvent = () => { showPreview.value = true; };
-const closePreview = () => { showPreview.value = false; };
-const formatPreviewDate = (str) => {
-  if (!str) return 'Date TBD';
-  return new Date(str).toLocaleString();
-};
 </script>
 
 <style scoped>

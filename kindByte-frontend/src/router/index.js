@@ -112,7 +112,7 @@ const router = createRouter({
     {
       path: '/viewevent/:id', // The :id is the variable we pass
       name: 'ViewEvent',
-      component: () => import('../views/ViewEvent.vue'),
+      component: () => import('../views/ViewEventView.vue'),
       meta: { requiresAuth: true, roles: ['beneficiary', 'caregiver', 'volunteer', 'staff'] }
     },
     
@@ -121,7 +121,7 @@ const router = createRouter({
     {
       path: '/registerevent/:id', // The :id is the variable we pass
       name: 'RegisterEvent',
-      component: () => import('../views/RegisterEvent.vue'),
+      component: () => import('../views/RegisterEventView.vue'),
       meta: { requiresAuth: true, roles: ['beneficiary', 'caregiver', 'volunteer'] }
     },
 
