@@ -12,6 +12,26 @@ const router = createRouter({
       meta: { public: true }
     },
     
+    // AUTH ROUTES
+    {
+      path: '/login',
+      name: 'Login',
+      component: () => import('../components/Login.vue'),
+      meta: { public: true }
+    },
+    {
+      path: '/signup',
+      name: 'Signup',
+      component: () => import('../views/SignupView.vue'),
+      meta: { public: true }
+    },
+    {
+      path: '/forgotpassword',
+      name: 'ForgotPassword',
+      component: () => import('../views/ForgotPasswordView.vue'),
+      meta: { public: true }
+    },
+    
     // Beneficiary/Caregiver Routes
     { 
       path: '/userhome', 
@@ -42,7 +62,7 @@ const router = createRouter({
     { 
       path: '/my-shifts', 
       name: 'MyShifts', 
-      component: () => import('../components/MyPlans.vue'), // Can reuse or create separate
+      component: () => import('../components/MyPlans.vue'),
       meta: { requiresAuth: true, roles: ['volunteer'] }
     },
     
@@ -53,10 +73,11 @@ const router = createRouter({
       component: () => import('../components/StaffHome.vue'),
       meta: { requiresAuth: true, roles: ['staff'] }
     },
+
     { 
-      path: '/staff/users', 
-      name: 'UserManagement',
-      component: () => import('../components/UserManagement.vue'),
+      path: '/staff/events', 
+      name: 'StaffEvents',
+      component: () => import('../components/ActivityCalendar.vue'),
       meta: { requiresAuth: true, roles: ['staff'] }
     },
 
@@ -67,22 +88,72 @@ const router = createRouter({
       component: () => import('../views/LoginView.vue'),
     },
     {
-      path: '/signup',
-      name: 'Signup',
-      component: () => import('../views/SignupView.vue'),
+      path: '/createevent',
+      name: 'CreateEvent',
+      component: () => import('../components/CreateEvent.vue'),
+      meta: { requiresAuth: true, roles: ['staff'] }
     },
     {
-      path: '/forgotpassword',
-      name: 'ForgotPassword',
-      component: () => import('../views/ForgotPasswordView.vue'),
+      path: '/editevent/:id',
+      name: 'EditEvent',
+      component: () => import('../components/EditEvent.vue'),
+      meta: { requiresAuth: true, roles: ['staff'] }
     },
+    {
+      path: '/staff/calendar',
+      name: 'Calendar',
+      component: () => import('../views/StaffHomeView.vue'), 
+      meta: { public: true }
+    },
+    
+    // Shared Routes
     {
       path: '/profile',
       name: 'Profile',
-      component: () => import('../views/ProfileView.vue'),
+      component: () => import('../components/Profile.vue'),
+      meta: { requiresAuth: true, roles: ['beneficiary', 'caregiver', 'volunteer', 'staff'] }
     },
+    
+
+    // To view an event in depth
+    {
+      path: '/viewevent/:id', // The :id is the variable we pass
+      name: 'ViewEvent',
+      component: () => import('../views/ViewEventView.vue'),
+      meta: { requiresAuth: true, roles: ['beneficiary', 'caregiver', 'volunteer', 'staff'] }
+    },
+    
+    // After viewing the fine-grain details of an event, move on to register for the event
+
+    {
+      path: '/registerevent/:id', // The :id is the variable we pass
+      name: 'RegisterEvent',
+      component: () => import('../views/RegisterEventView.vue'),
+      meta: { requiresAuth: true, roles: ['beneficiary', 'caregiver', 'volunteer'] }
+    },
+
+    {
+      path: '/manage-events',
+      name: 'ManageEvents',
+      component: () => import('@/components/ManageEvents.vue'),
+      meta: { requiresAuth: true, roles: ['staff'] }
+    },
+
+    {
+      path: '/user-management',
+      name: 'UserManagement',
+      component: () => import('@/components/UserManagement.vue'),
+      meta: { requiresAuth: true, roles: ['staff'] }
+
+    }, 
+    
+    {
+      path: '/attendance-report',
+      name: 'AttendanceReport',
+      component: () => import('@/components/AttendanceReport.vue'),
+      meta: { requiresAuth: true, roles: ['staff'] }
+    }, 
   ],
 })
-
 
 export default router

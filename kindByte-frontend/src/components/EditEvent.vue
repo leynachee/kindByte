@@ -1,365 +1,1009 @@
 <template>
-  <div class="create-event">
-    <div class="container">
-      <div class="header">
-        <h1>Edit Event</h1>
-        <p class="subtitle">Modify the details of your existing experience</p>
-      </div>
+  <div class="page-container">
+    <!-- Header -->
+    <div class="page-header">
+      <h1>Edit Event</h1>
+      <p class="subtitle">Modify the details of your event</p>
+    </div>
 
-      <div v-if="loading" class="loading-state">
-        <div class="spinner"></div>
-        <p>Fetching event details...</p>
-      </div>
+    <!-- Loading State -->
+    <div v-if="loading" class="loading-state">
+      <div class="spinner"></div>
+      <p>Loading event details...</p>
+    </div>
 
-      <form v-else @submit.prevent="handleUpdate" class="event-form" novalidate>
-        
-        <div class="form-section">
-          <h2 class="section-title">📋 Event Details</h2>
-          
+    <form v-else @submit.prevent="handleUpdate" class="form-content" novalidate>
+      
+      <!-- Event Details Section -->
+      <div class="section">
+        <h3 class="section-title">📋 Event Details</h3>
+        <div class="info-card">
           <div class="form-group" :class="{ 'has-error': isAttempted && !eventData.name }">
-            <label class="required">Event Name</label>
-            <input v-model="eventData.name" type="text" placeholder="e.g., Annual Gala 2026" />
-            <span v-if="isAttempted && !eventData.name" class="error-text">Event name is required</span>
+            <label class="form-label required">Title</label>
+            <input 
+              v-model="eventData.name" 
+              type="text" 
+              class="form-input"
+              placeholder="e.g., Art Workshop 2026" 
+            />
+            <span v-if="isAttempted && !eventData.name" class="error-text">Title is required</span>
           </div>
 
           <div class="form-group" :class="{ 'has-error': isAttempted && !eventData.description }">
-            <label class="required">Description</label>
-            <textarea v-model="eventData.description" rows="4" placeholder="Describe your event..."></textarea>
+            <label class="form-label required">Description</label>
+            <textarea 
+              v-model="eventData.description" 
+              class="form-input form-textarea"
+              placeholder="Tell attendees what this event is about..." 
+              rows="3"
+            ></textarea>
             <span v-if="isAttempted && !eventData.description" class="error-text">Description is required</span>
           </div>
 
-          <div class="form-row">
-            <div class="form-group" :class="{ 'has-error': isAttempted && !eventData.date }">
-              <label class="required">Date & Time</label>
-              <input v-model="eventData.date" type="datetime-local" />
-            </div>
-            <div class="form-group" :class="{ 'has-error': isAttempted && (!eventData.duration || eventData.duration <= 0) }">
-              <label class="required">Duration (hrs)</label>
-              <input v-model.number="eventData.duration" type="number" step="0.5" />
-            </div>
+          <div class="form-group" :class="{ 'has-error': isAttempted && !eventData.date }">
+            <label class="form-label required">Start Date & Time</label>
+            <input 
+              v-model="eventData.startTime" 
+              type="datetime-local" 
+              class="form-input"
+            />
+            <span v-if="isAttempted && !eventData.date" class="error-text">Please select a date</span>
+          </div>
+        
+          <div class="form-group" :class="{ 'has-error': isAttempted && !eventData.date }">
+            <label class="form-label required">End Date & Time</label>
+            <input 
+              v-model="eventData.endTime" 
+              type="datetime-local" 
+              class="form-input"
+            />
+            <span v-if="isAttempted && !eventData.date" class="error-text">Please select a date</span>
           </div>
 
+          <div class="form-group" :class="{ 'has-error': isAttempted && !eventData.maxCapacity }">
+            <label class="form-label required">Capacity</label>
+            <input 
+              v-model.number="eventData.maxCapacity" 
+              type="number" 
+              class="form-input"
+              min="0" 
+              placeholder="50" 
+            />
+          </div>
+          
+
           <div class="form-group" :class="{ 'has-error': isAttempted && !eventData.location }">
-            <label class="required">Location</label>
-            <input v-model="eventData.location" type="text" placeholder="Venue or Link" />
+            <label class="form-label required">Location</label>
+            <input 
+              v-model="eventData.location" 
+              type="text" 
+              class="form-input"
+              placeholder="e.g., MTC Central" 
+            />
             <span v-if="isAttempted && !eventData.location" class="error-text">Location is required</span>
           </div>
 
-          <div class="form-row">
-            <div class="form-group" :class="{ 'has-error': isAttempted && !eventData.maxCapacity }">
-              <label class="required">Max Capacity</label>
-              <input v-model.number="eventData.maxCapacity" type="number" min="1" />
-            </div>
-            <div class="form-group" :class="{ 'has-error': isAttempted && !eventData.category }">
-              <label class="required">Category</label>
-              <select v-model="eventData.category">
-                <option value="" disabled>Select category</option>
-                <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>Event Image URL</label>
-            <input v-model="eventData.imageUrl" type="url" placeholder="https://..." />
-          </div>
-        </div>
-
-        <div class="form-section">
-          <div class="section-header">
-            <h2 class="section-title">❓ Registration Questions</h2>
-          </div>
-
-          <div v-if="questions.length === 0" class="empty-questions">
-            <p>No custom questions yet.</p>
-          </div>
-
-          <div v-else class="questions-list">
-            <div v-for="(question, index) in questions" :key="index" 
-                 class="question-card" 
-                 :class="{ 'has-error': isAttempted && !question.text }">
-              <div class="question-header">
-                <span class="question-number">Question {{ index + 1 }}</span>
-                <button type="button" @click="deleteQuestion(index)" class="btn-delete-small">Remove</button>
-              </div>
-
-              <div class="question-body">
-                <div class="form-group">
-                  <input v-model="question.text" type="text" placeholder="Question text..." />
-                </div>
-
-                <div class="form-row">
-                  <div class="form-group">
-                    <select v-model="question.type" @change="updateQuestionType(index)">
-                      <option value="text">Short Text</option>
-                      <option value="textarea">Long Text</option>
-                      <option value="mcq">Single Choice</option>
-                      <option value="checkbox">Multiple Choice</option>
-                    </select>
-                  </div>
-                  <div class="form-group flex-center">
-                    <label class="checkbox-label">
-                      <input v-model="question.required" type="checkbox" /> Required
-                    </label>
-                  </div>
-                </div>
-
-                <div v-if="['mcq', 'checkbox'].includes(question.type)" class="options-container">
-                  <div v-for="(option, optIndex) in question.options" :key="optIndex" class="option-row">
-                    <input v-model="question.options[optIndex]" type="text" />
-                    <button type="button" @click="removeOption(index, optIndex)" class="btn-text-danger">✕</button>
-                  </div>
-                  <button type="button" @click="addOption(index)" class="btn-add-option">+ Add Option</button>
-                </div>
-              </div>
-            </div>
-          </div>
-          <button type="button" @click="addQuestion" class="btn-secondary full-width">+ Add Question</button>
-        </div>
-
-        <div v-if="isAttempted && !isFormValid" class="validation-summary">
-          ⚠️ Please fill in all required fields highlighted in red.
-        </div>
-
-        <div class="form-actions">
-          <button type="button" @click="goBack" class="btn-text">Cancel</button>
-          <div class="main-actions">
-            <button type="button" @click="showPreview = true" class="btn-preview">Preview Changes</button>
-            <button type="submit" class="btn-primary" :disabled="submitting">
-              {{ submitting ? 'Saving...' : 'Update Event' }}
-            </button>
-          </div>
-        </div>
-      </form>
-
-      <div v-if="showPreview" class="modal-overlay" @click="showPreview = false">
-        <div class="modal-content" @click.stop>
-          <div class="modal-header">
-            <h2>Preview: {{ eventData.name }}</h2>
-            <button @click="showPreview = false" class="btn-close">✕</button>
-          </div>
-          <div class="preview-scroll">
-            <div class="preview-content">
-              <div class="preview-img-box" v-if="eventData.imageUrl">
-                <img :src="eventData.imageUrl" alt="Event Banner" />
-              </div>
-              <div class="preview-badges">
-                <span class="badge">📍 {{ eventData.location }}</span>
-                <span class="badge">📅 {{ eventData.date }}</span>
-                <span class="badge">📂 {{ eventData.category }}</span>
-              </div>
-              <p>{{ eventData.description }}</p>
-            </div>
+          <div class="form-group" :class="{ 'has-error': isAttempted && !eventData.category }">
+            <label class="form-label required">Category</label>
+            <select v-model="eventData.category" class="form-input form-select">
+              <option value="" disabled>Select category</option>
+              <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
+            </select>
+            <span v-if="isAttempted && !eventData.category" class="error-text">Please select a category</span>
           </div>
         </div>
       </div>
 
-    </div>
+      <!-- Registration Questions Section -->
+      <div class="section">
+        <h3 class="section-title">❓ Registration Questions</h3>
+        
+        <div v-if="questions.length === 0" class="empty-state">
+          <p>No custom questions yet.</p>
+          <p class="hint">Add questions to collect info during registration.</p>
+        </div>
+
+        <div v-else class="questions-list">
+          <div 
+            v-for="(question, index) in questions" 
+            :key="question.id || index" 
+            class="question-card"
+            :class="{ 'has-error': isAttempted && !question.description }"
+          >
+            <div class="question-header">
+              <span class="question-number">Q{{ index + 1 }}</span>
+              <button type="button" @click="deleteQuestion(index)" class="btn-delete">
+                Remove
+              </button>
+            </div>
+
+            <div class="form-group">
+              <input 
+                v-model="question.description" 
+                type="text" 
+                class="form-input"
+                placeholder="Enter your question..." 
+              />
+              <span v-if="isAttempted && !question.description" class="error-text">Question text is required</span>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Type</label>
+                <select v-model="question.type" @change="updateQuestionType(index)" class="form-input form-select">
+                  <option value="text">Short Text</option>
+                  <option value="textarea">Long Text</option>
+                  <option value="mcq">Single Choice</option>
+                  <option value="checkbox">Multiple Choice</option>
+                  <option value="dropdown">Dropdown</option>
+                </select>
+              </div>
+              <div class="form-group checkbox-group">
+                <label class="checkbox-label">
+                  <input v-model="question.isCompulsory" type="checkbox" />
+                  <span>Required</span>
+                </label>
+              </div>
+            </div>
+
+            <div v-if="['mcq', 'checkbox', 'dropdown'].includes(question.type)" class="options-container">
+              <label class="form-label">Options</label>
+              <div v-for="(option, optIndex) in question.options" :key="optIndex" class="option-row">
+                <span class="option-number">{{ optIndex + 1 }}.</span>
+                <input 
+                  v-model="question.options[optIndex]" 
+                  type="text" 
+                  class="form-input"
+                  :placeholder="'Option ' + (optIndex + 1)" 
+                />
+                <button 
+                  type="button" 
+                  @click="removeOption(index, optIndex)" 
+                  v-if="question.options.length > 2" 
+                  class="btn-remove-option"
+                >
+                  ✕
+                </button>
+              </div>
+              <button type="button" @click="addOption(index)" class="btn-add-option">
+                + Add Option
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <button type="button" @click="addQuestion" class="btn-secondary">
+          + Add Question
+        </button>
+      </div>
+
+      <!-- Validation Summary -->
+      <div v-if="isAttempted && !isFormValid" class="validation-summary">
+        ⚠️ Please fill in all required fields
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="action-section">
+        <button type="button" @click="previewEvent" class="btn-preview">
+          👁️ Preview
+        </button>
+        <button type="submit" class="btn-primary" :disabled="submitting">
+          {{ submitting ? 'Saving...' : '✓ Update Event' }}
+        </button>
+      </div>
+
+      <!-- Danger Zone -->
+      <div class="section danger-section">
+        <h3 class="section-title danger-title">⚠️ Danger Zone</h3>
+        <div class="danger-card">
+          <div class="danger-info">
+            <strong>Delete this event</strong>
+            <p>Once deleted, this event cannot be recovered.</p>
+          </div>
+          <button type="button" @click="confirmDelete" class="btn-danger">
+            Delete Event
+          </button>
+        </div>
+      </div>
+
+      <button type="button" @click="goBack" class="btn-cancel">
+        Cancel
+      </button>
+    </form>
+
+    <!-- Preview Modal -->
+    <teleport to="body">
+      <transition name="fade">
+        <div v-if="showPreview" class="modal-overlay" @click="closePreview">
+          <div class="modal-content" @click.stop>
+            <div class="modal-header">
+              <h2>Event Preview</h2>
+              <button @click="closePreview" class="btn-close">✕</button>
+            </div>
+            <div class="modal-body">
+              <div v-if="eventData.imageUrl" class="preview-image">
+                <img :src="eventData.imageUrl" alt="Event Banner" />
+              </div>
+              <h3 class="preview-title">{{ eventData.name || 'Untitled Event' }}</h3>
+              <div class="preview-meta">
+                <span class="meta-item">📍 {{ eventData.location || 'No location' }}</span>
+                <span class="meta-item">📅 {{ formatPreviewDate(eventData.date) }}</span>
+                <span class="meta-item">👥 {{ eventData.maxCapacity || '0' }} spots</span>
+                <span class="meta-item">📂 {{ eventData.category || 'Uncategorized' }}</span>
+              </div>
+              <div class="preview-description">
+                <h4>About this event</h4>
+                <p>{{ eventData.description || 'No description provided.' }}</p>
+              </div>
+              <div v-if="questions.length > 0" class="preview-questions">
+                <h4>Registration Questions ({{ questions.length }})</h4>
+                <ul>
+                  <li v-for="(q, i) in questions" :key="i">
+                    {{ q.text || 'Untitled question' }}
+                    <span v-if="q.isCompulsory" class="required-badge">Required</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </transition>
+    </teleport>
   </div>
 </template>
 
 <script>
 import { ref, reactive, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import { db } from '@/firebase';
+import { doc, getDoc, updateDoc, deleteDoc, writeBatch, collection, Timestamp } from 'firebase/firestore';
 
 export default {
   name: 'EditEvent',
   setup() {
-    const router = useRouter();
     const route = useRoute();
+    const router = useRouter();
     const eventId = route.params.id;
 
+    // --- State ---
     const loading = ref(true);
     const submitting = ref(false);
     const isAttempted = ref(false);
     const showPreview = ref(false);
     
-    const categories = ['Technology', 'Business', 'Arts', 'Education', 'Sports', 'Social', 'Other'];
-
-    const eventData = reactive({
+    const categories = ['Outings', 'MTC Office', 'Swimming Complex', 'Nature Walks', 'Gym and Dance', 'Reading'];
+    
+    const eventData = ref({
       name: '',
       description: '',
-      date: '',
-      duration: 2,
+      startTime: '',
+      endTime: '',
+      maxCapacity: 0,
       location: '',
-      maxCapacity: null,
-      category: '',
-      imageUrl: ''
+      category: ''
     });
 
     const questions = ref([]);
 
+    // --- Validation ---
+    const isFormValid = computed(() => {
+      return eventData.value.name && eventData.value.description && eventData.value.startTime && eventData.value.endTime && eventData.value.maxCapacity
+      && eventData.value.location && questions.value.every(q =>q.description);
+    });
+
+    // --- Fetch Data ---
     onMounted(async () => {
       try {
-        await new Promise(r => setTimeout(r, 800)); // Simulate fetch
-        const mockFetchedData = {
-          name: 'Global Tech Summit 2026',
-          description: 'The premier event for tech enthusiasts...',
-          date: '2026-06-15T09:00',
-          duration: 5,
-          location: 'Convention Center, SF',
-          maxCapacity: 500,
-          category: 'Technology',
-          imageUrl: 'https://images.unsplash.com/photo-1540575861501-7ce0e220abb1?w=800'
-        };
-        Object.assign(eventData, mockFetchedData);
-        questions.value = [
-          { text: 'T-shirt size?', type: 'mcq', required: true, options: ['S', 'M', 'L', 'XL'] }
-        ];
+        const eventRef = doc(db, 'events', eventId);
+        const eventSnap = await getDoc(eventRef);
+
+        if (eventSnap.exists()) {
+          const data = eventSnap.data();
+          
+          // Map Firebase data to form (Converting Timestamps to Local ISO for datetime-local input)
+          eventData.value = {
+            ...data,
+            name: data.title,
+            maxCapacity: data.maxCount,
+            startTime: data.startTime?.toDate().toISOString().slice(0, 16),
+            endTime: data.endTime?.toDate().toISOString().slice(0, 16),
+            category: data.type
+          };
+
+          // Fetch Questions
+          if (data.questionID && data.questionID.length > 0) {
+            const qPromises = data.questionID.map(id => getDoc(doc(db, 'questions', id)));
+            const qSnaps = await Promise.all(qPromises);
+            questions.value = qSnaps.map(snap => ({
+              id: snap.id,
+              ...snap.data()
+            }));
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching event:", err);
       } finally {
         loading.value = false;
       }
     });
 
-    const isFormValid = computed(() => {
-      const basicValid = eventData.name && eventData.description && eventData.date && eventData.location && eventData.category;
-      const questionsValid = questions.value.every(q => q.text.trim() !== '');
-      return basicValid && questionsValid;
-    });
-
+    // --- Actions ---
     const handleUpdate = async () => {
       isAttempted.value = true;
-      if (!isFormValid.value) {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        return;
-      }
+      if (!isFormValid.value) return;
+
       submitting.value = true;
-      await new Promise(r => setTimeout(r, 1500)); // Simulate Update
-      router.push('/events');
+      const batch = writeBatch(db);
+
+      try {
+        // 1. Prepare Question IDs
+        const questionIds = questions.value.map(q => q.id || doc(collection(db, 'questions')).id);
+
+        // 2. Update/Create Question Documents in batch
+        questions.value.forEach((q, index) => {
+          const qRef = doc(db, 'questions', questionIds[index]);
+          batch.set(qRef, {
+            description: q.description,
+            type: q.type,
+            isCompulsory: q.isCompulsory,
+            options: ['mcq', 'checkbox', 'dropdown'].includes(q.type) ? q.options : null
+          });
+        });
+
+        // 3. Update Event Document
+        const eventRef = doc(db, 'events', eventId);
+        batch.update(eventRef, {
+          title: eventData.value.name,
+          description: eventData.value.description,
+          startTime: Timestamp.fromDate(new Date(eventData.value.startTime)),
+          endTime: Timestamp.fromDate(new Date(eventData.value.endTime)),
+          maxCount: eventData.value.maxCapacity,
+          location: eventData.value.location,
+          type: eventData.value.category,
+          questionID: questionIds
+        });
+
+        await batch.commit();
+        alert("Event updated successfully!");
+        router.push(`/event/${eventId}`);
+      } catch (err) {
+        console.error("Update failed:", err);
+        alert("Error updating event.");
+      } finally {
+        submitting.value = false;
+      }
     };
 
-    const addQuestion = () => questions.value.push({ text: '', type: 'text', required: false, options: [] });
-    const deleteQuestion = (index) => questions.value.splice(index, 1);
-    const updateQuestionType = (index) => {
-      const q = questions.value[index];
-      if (['mcq', 'checkbox'].includes(q.type)) q.options = q.options.length ? q.options : ['Option 1', 'Option 2'];
+    const confirmDelete = async () => {
+      if (confirm("Are you sure? This cannot be undone.")) {
+        try {
+          await deleteDoc(doc(db, 'events', eventId));
+          router.push('/events');
+        } catch (err) {
+          alert("Delete failed.");
+        }
+      }
     };
-    const addOption = (idx) => questions.value[idx].options.push(`Option ${questions.value[idx].options.length + 1}`);
-    const removeOption = (qIdx, oIdx) => questions.value[qIdx].options.splice(oIdx, 1);
+
+    // --- Question Helpers ---
+    const addQuestion = () => {
+      questions.value.push({
+        description: '',
+        type: 'text',
+        isCompulsory: false,
+        options: ['Option 1', 'Option 2']
+      });
+    };
+
+    const deleteQuestion = (index) => questions.value.splice(index, 1);
+    
+    const addOption = (qIndex) => questions.value[qIndex].options.push(`Option ${questions.value[qIndex].options.length + 1}`);
+    
+    const removeOption = (qIndex, optIndex) => questions.value[qIndex].options.splice(optIndex, 1);
+
     const goBack = () => router.go(-1);
+    const previewEvent = () => showPreview.value = true;
+    const closePreview = () => showPreview.value = false;
 
     return {
-      eventData, questions, loading, submitting, isAttempted, showPreview, categories,
-      isFormValid, handleUpdate, addQuestion, deleteQuestion, updateQuestionType,
-      addOption, removeOption, goBack
+      eventData, questions, loading, submitting, isAttempted, isFormValid,
+      categories, showPreview, handleUpdate, confirmDelete, addQuestion,
+      deleteQuestion, addOption, removeOption, goBack, previewEvent, closePreview
     };
   }
 };
 </script>
 
 <style scoped>
-/* Base Styles */
-.create-event {
-  min-height: 100vh;
-  background: #f4f7f9;
-  padding: 40px 20px;
-  font-family: 'Inter', sans-serif;
+* {
+  box-sizing: border-box;
 }
 
-.container {
-  max-width: 850px;
-  margin: 0 auto;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-  overflow: hidden;
+.page-container {
+  background: #f8fafc;
+  min-height: 100vh;
+  padding-bottom: 100px;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 /* Header */
-.header {
-  padding: 40px;
-  border-bottom: 1px solid #edf2f7;
+.page-header {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  padding: 24px 20px 30px 20px;
+  color: white;
 }
 
-.header h1 { margin: 0; color: #1a202c; font-size: 2rem; font-weight: 800; }
-.subtitle { color: #718096; margin-top: 8px; }
+.page-header h1 {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 4px 0;
+}
+
+.subtitle {
+  font-size: 14px;
+  opacity: 0.9;
+  margin: 0;
+}
 
 /* Loading State */
 .loading-state {
-  padding: 100px;
-  text-align: center;
-  color: #667eea;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  color: #6366f1;
 }
 
 .spinner {
-  border: 4px solid rgba(0, 0, 0, 0.1);
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
+  border: 4px solid #e2e8f0;
+  border-top-color: #6366f1;
   border-radius: 50%;
-  border-left-color: #667eea;
   animation: spin 1s linear infinite;
-  margin: 0 auto 20px;
+  margin-bottom: 16px;
 }
 
-@keyframes spin { 100% { transform: rotate(360deg); } }
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
 
-/* Form Elements */
-.event-form { padding: 40px; }
-.form-section { margin-bottom: 40px; }
-.section-title { font-size: 1.25rem; color: #2d3748; margin-bottom: 24px; border-bottom: 2px solid #667eea; display: inline-block; padding-bottom: 5px; }
+.loading-state p {
+  font-size: 14px;
+  font-weight: 500;
+  color: #64748b;
+  margin: 0;
+}
 
-.form-group { margin-bottom: 20px; }
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+/* Form Content */
+.form-content {
+  padding: 20px 16px;
+}
 
-label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.9rem; color: #4a5568; }
-.required::after { content: ' *'; color: #e53e3e; }
+/* Section */
+.section {
+  margin-bottom: 24px;
+}
 
-input, select, textarea {
-  width: 100%;
-  padding: 12px 16px;
+.section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 12px 0;
+}
+
+/* Info Card */
+.info-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
   border: 1px solid #e2e8f0;
-  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+/* Form Groups */
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group:last-child {
+  margin-bottom: 0;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.form-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 6px;
+}
+
+.form-label.required::after {
+  content: ' *';
+  color: #ef4444;
+}
+
+.form-input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #0f172a;
+  background: #fff;
   transition: all 0.2s;
 }
 
-input:focus, select:focus, textarea:focus {
+.form-input:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
-/* Error States */
-.has-error input, .has-error select, .has-error textarea {
-  border-color: #fc8181;
-  background-color: #fff5f5;
+.form-textarea {
+  resize: vertical;
+  min-height: 80px;
 }
-.has-error label { color: #c53030; }
-.error-text { color: #e53e3e; font-size: 0.8rem; margin-top: 4px; display: block; }
+
+.form-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+  padding-right: 40px;
+}
+
+.hint {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-top: 4px;
+  display: block;
+}
+
+/* Validation */
+.has-error .form-input {
+  border-color: #fca5a5;
+  background-color: #fef2f2;
+}
+
+.has-error .form-label {
+  color: #dc2626;
+}
+
+.error-text {
+  color: #dc2626;
+  font-size: 12px;
+  font-weight: 500;
+  margin-top: 4px;
+  display: block;
+}
 
 .validation-summary {
-  background: #fff5f5;
-  color: #c53030;
-  padding: 16px;
-  border-radius: 8px;
-  border: 1px solid #feb2b2;
-  margin-bottom: 24px;
+  background: #fef2f2;
+  color: #dc2626;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid #fca5a5;
+  margin-bottom: 16px;
+  font-weight: 600;
+  font-size: 14px;
   text-align: center;
 }
 
-/* Buttons */
-.form-actions { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #edf2f7; padding-top: 30px; }
-.main-actions { display: flex; gap: 16px; }
+/* Empty State */
+.empty-state {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 12px;
+}
 
-.btn-primary { background: #667eea; color: white; border: none; padding: 14px 28px; border-radius: 8px; font-weight: 700; cursor: pointer; }
-.btn-preview { background: white; color: #667eea; border: 1px solid #667eea; padding: 13px 28px; border-radius: 8px; font-weight: 600; cursor: pointer; }
-.btn-text { background: none; border: none; color: #718096; cursor: pointer; }
-.btn-secondary { background: #f7fafc; border: 1px solid #e2e8f0; padding: 14px; border-radius: 8px; cursor: pointer; font-weight: 600; }
-.full-width { width: 100%; }
+.empty-state p {
+  margin: 0;
+  color: #64748b;
+  font-size: 14px;
+}
 
 /* Question Cards */
-.question-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
-.question-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-.question-number { font-weight: 700; color: #667eea; font-size: 0.8rem; text-transform: uppercase; }
-.btn-delete-small { background: none; border: none; color: #fc8181; cursor: pointer; font-size: 0.8rem; }
-.options-container { background: white; padding: 15px; border-radius: 8px; margin-top: 15px; border: 1px dashed #cbd5e0; }
-.option-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.questions-list {
+  margin-bottom: 12px;
+}
+
+.question-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 12px;
+}
+
+.question-card.has-error {
+  border-color: #fca5a5;
+}
+
+.question-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.question-number {
+  font-size: 13px;
+  font-weight: 700;
+  color: #6366f1;
+  background: #eef2ff;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.btn-delete {
+  background: none;
+  border: none;
+  color: #ef4444;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.checkbox-group {
+  display: flex;
+  align-items: flex-end;
+  padding-bottom: 4px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #475569;
+  cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #6366f1;
+}
+
+/* Options */
+.options-container {
+  background: #f8fafc;
+  padding: 14px;
+  border-radius: 10px;
+  margin-top: 12px;
+  border: 1px dashed #cbd5e1;
+}
+
+.option-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.option-number {
+  font-size: 13px;
+  color: #94a3b8;
+  font-weight: 600;
+  width: 20px;
+}
+
+.option-row .form-input {
+  flex: 1;
+  padding: 10px 12px;
+}
+
+.btn-remove-option {
+  background: none;
+  border: none;
+  color: #ef4444;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.btn-add-option {
+  width: 100%;
+  background: none;
+  border: 1px dashed #6366f1;
+  color: #6366f1;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+/* Buttons */
+.btn-secondary {
+  width: 100%;
+  background: white;
+  color: #475569;
+  border: 2px solid #e2e8f0;
+  padding: 14px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.action-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.btn-preview {
+  background: white;
+  color: #6366f1;
+  border: 2px solid #6366f1;
+  padding: 14px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-preview:hover {
+  background: #eef2ff;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: white;
+  border: none;
+  padding: 14px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  transition: all 0.2s;
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-cancel {
+  width: 100%;
+  background: none;
+  border: none;
+  color: #94a3b8;
+  padding: 14px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-cancel:hover {
+  color: #64748b;
+}
+
+/* Danger Zone */
+.danger-section {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.danger-title {
+  color: #dc2626;
+}
+
+.danger-card {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.danger-info strong {
+  display: block;
+  font-size: 14px;
+  color: #dc2626;
+  margin-bottom: 4px;
+}
+
+.danger-info p {
+  font-size: 12px;
+  color: #991b1b;
+  margin: 0;
+}
+
+.btn-danger {
+  background: #dc2626;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.btn-danger:hover {
+  background: #b91c1c;
+}
 
 /* Modal */
-.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 1000; }
-.modal-content { background: white; width: 90%; max-width: 600px; border-radius: 12px; max-height: 80vh; display: flex; flex-direction: column; }
-.modal-header { padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; }
-.preview-scroll { overflow-y: auto; padding: 20px; }
-.preview-img-box { width: 100%; height: 200px; border-radius: 8px; overflow: hidden; margin-bottom: 20px; }
-.preview-img-box img { width: 100%; height: 100%; object-fit: cover; }
-.badge { background: #edf2f7; padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; margin-right: 8px; }
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+  backdrop-filter: blur(4px);
+}
+
+.modal-content {
+  background: white;
+  width: 100%;
+  max-width: 400px;
+  border-radius: 16px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modal-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.btn-close {
+  background: #f1f5f9;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  color: #64748b;
+}
+
+.modal-body {
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.preview-image {
+  width: 100%;
+  height: 150px;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.preview-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.preview-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 12px 0;
+}
+
+.preview-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.meta-item {
+  background: #f1f5f9;
+  color: #475569;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.preview-description h4,
+.preview-questions h4 {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 8px 0;
+}
+
+.preview-description p {
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.preview-questions {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.preview-questions ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.preview-questions li {
+  font-size: 13px;
+  color: #475569;
+  margin-bottom: 6px;
+}
+
+.required-badge {
+  background: #fef2f2;
+  color: #dc2626;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
+}
+
+/* Transitions */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
 </style>

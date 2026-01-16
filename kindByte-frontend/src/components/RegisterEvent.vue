@@ -7,7 +7,7 @@
 
       <div v-else>
         <div class="header">
-          <h1>Register for {{ eventData.name + " @ " + eventData.location}}</h1>
+          <h1>Register for {{ eventData.name}}</h1>
           <p class="subtitle">Please provide the information below to secure your spot</p>
         </div>
 
@@ -15,21 +15,21 @@
           <div v-if="eventData.questions && eventData.questions.length > 0" class="form-section"> 
             <div v-for="(question, index) in eventData.questions" :key="index" class="dynamic-question">
               <label :class="{ 'required': question.required }">
-                {{ index + 1 }}. {{ question.text }}
+                {{ index + 1 }}. {{ question.description }}
               </label>
 
               <input 
                 v-if="question.type === 'text'"
-                v-model="answers[index]"
+                v-model="answers[question.id]"
                 type="text"
-                :required="question.required"
+                :required="question.isCompulsory"
                 placeholder="Your answer..."
               />
 
               <textarea 
                 v-else-if="question.type === 'textarea'"
-                v-model="answers[index]"
-                :required="question.required"
+                v-model="answers[question.id]"
+                :required="question.isCompulsory"
                 rows="3"
                 placeholder="Type your response here..."
               ></textarea>
@@ -40,8 +40,8 @@
                     type="radio" 
                     :name="'q' + index" 
                     :value="opt" 
-                    v-model="answers[index]"
-                    :required="question.required"
+                    v-model="answers[question.id]"
+                    :required="question.isCompulsory"
                   />
                   <span>{{ opt }}</span>
                 </label>
@@ -52,22 +52,12 @@
                   <input 
                     type="checkbox" 
                     :value="opt" 
-                    v-model="answers[index]" 
+                    v-model="answers[question.id]"
+                    :required="question.isCompulsory"
                   />
                   <span>{{ opt }}</span>
                 </label>
               </div>
-
-              <select 
-                v-else-if="question.type === 'dropdown'"
-                v-model="answers[index]"
-                :required="question.required"
-              >
-                <option value="" disabled selected>Select an option</option>
-                <option v-for="opt in question.options" :key="opt" :value="opt">
-                  {{ opt }}
-                </option>
-              </select>
             </div>
           </div>
 
@@ -86,6 +76,8 @@
 <script>
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { db } from '@/firebase';
+import { doc, getDoc, collection, addDoc } from 'firebase/firestore';
 
 export default {
   name: 'RegisterEvent',
@@ -99,40 +91,83 @@ export default {
     const answers = ref({});
 
     onMounted(async () => {
-      // Mock API call
-      await new Promise(r => setTimeout(r, 800));
-      
-      eventData.value = {
-        name: "MYG Movie Day",
-        location: "Vivocity",
-        questions: [
-          { text: "Will you be attending and which meeting point we will receive you?", type: "mcq", required: true, options: ["Yes, meet at Harbourfront MRT Exit E", "Yes, meet directly at Vivocity Golden Village", "No"] },
-          { text: "Any dietary restrictions?", type: "text", required: false },
-          { text: "Which topics interest you most?", type: "checkbox", required: true, options: ["Board Games", "Arts and Craft", "Singing and Dancing"] },
-          { text: "How many caregivers will be joining", type: "dropdown", required: true, options: ["0", "1", "2", "3 or more"] },
-          { text: "Any other concerns?", type: "textarea", required: true }
-        ]
-      };
+      try {
+        loading.value = true;
+        const eventId = route.params.id;
 
-      // Initialize answers based on type
-      eventData.value.questions.forEach((q, index) => {
-        answers.value[index] = q.type === 'checkbox' ? [] : '';
-      });
+        // 1. Get the Event Document to get the questionID array
+        const eventSnap = await getDoc(doc(db, "events", eventId));
+        
+        if (eventSnap.exists()) {
+          const eventInfo = eventSnap.data();
+          const questionIds = eventInfo.questionID || [];
 
-      loading.value = false;
+          // 2. Fetch all questions based on IDs
+          // We use Promise.all to fetch them simultaneously for speed
+          const questionPromises = questionIds.map(id => getDoc(doc(db, "questions", id)));
+          const questionSnaps = await Promise.all(questionPromises);
+
+          const fetchedQuestions = questionSnaps
+            .filter(snap => snap.exists())
+            .map(snap => ({
+              id: snap.id,
+              ...snap.data()
+            }));
+
+          // 3. Store in eventData
+          eventData.value = {
+            name: eventInfo.title,
+            questions: fetchedQuestions
+          };
+
+          // 4. Initialize reactive answers object
+          fetchedQuestions.forEach((q) => {
+            // Use question ID as key for cleaner data handling
+            answers.value[q.id] = q.type === 'checkbox' ? [] : '';
+          });
+
+        } else {
+          console.error("Event not found");
+        }
+      } catch (err) {
+        console.error("Error loading registration form:", err);
+      } finally {
+        loading.value = false;
+      }
     });
 
     const submitRegistration = async () => {
+      // 1. Basic validation: check if compulsory questions are answered
+      const missingRequired = eventData.value.questions.find(q => 
+        q.isCompulsory && (!answers.value[q.id] || answers.value[q.id].length === 0)
+      );
+
+      if (missingRequired) {
+        alert(`Please answer: ${missingRequired.description}`);
+        return;
+      }
+
       submitting.value = true;
-      const submission = {
-        eventId: route.params.id,
-        responses: answers.value,
-        submittedAt: new Date().toISOString()
-      };
-      console.log("Submitting Registration:", submission);
-      await new Promise(r => setTimeout(r, 1500));
-      alert("Registration Successful!");
-      router.push('/events');
+
+      try {
+        // 2. Prepare the payload
+        const registrationData = {
+          eventId: route.params.id,
+          userId: "GZ0aQwdtAK8D1algU17A", // change this ltr
+          responses: answers.value
+        };
+
+        // 3. Save to the "registrations" collection
+        await addDoc(collection(db, "registrations"), registrationData);
+
+        alert("Registration Successful!");
+        router.push('/events'); // Redirect back to events list
+      } catch (err) {
+        console.error("Error saving registration:", err);
+        alert("Failed to save registration. Please try again. Error:" + err);
+      } finally {
+        submitting.value = false;
+      }
     };
 
     return { eventData, loading, submitting, answers, submitRegistration };

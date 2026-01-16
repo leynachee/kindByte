@@ -1,15 +1,15 @@
 <template>
   <div id="app-wrapper">
     <div class="mobile-frame">
-      <!-- Header -->
-      <header class="app-header">
+      <!-- Header - hide on login/signup -->
+      <header class="app-header" v-if="showHeader">
         <div class="header-left">
           <img src="@/assets/minds-logo.png" alt="MINDS" class="logo" />
         </div>
       </header>
 
       <!-- Main Content Area -->
-      <main class="scroll-area">
+      <main class="scroll-area" :class="{ 'full-screen': !showHeader }">
         <router-view v-slot="{ Component }">
           <transition name="fade" mode="out-in">
             <component :is="Component" />
@@ -17,67 +17,27 @@
         </router-view>
       </main>
 
-      <!-- Bottom Navigation -->
+      <!-- Bottom Navigation - SAME FOR ALL ROLES -->
       <nav class="bottom-nav" v-if="showBottomNav">
-        <!-- Beneficiary/Caregiver Nav -->
-        <template v-if="user.role === 'beneficiary' || user.role === 'caregiver'">
-          <router-link :to="homePath" class="nav-item">
-            <span class="nav-icon">🏠</span>
-            <span class="nav-label">Home</span>
-          </router-link>
-          <router-link to="/calendar" class="nav-item">
-            <span class="nav-icon">📅</span>
-            <span class="nav-label">Activities</span>
-          </router-link>
-          <router-link to="/my-plans" class="nav-item">
-            <span class="nav-icon">📋</span>
-            <span class="nav-label">My Plans</span>
-          </router-link>
-          <router-link to="/profile" class="nav-item">
-            <span class="nav-icon">👤</span>
-            <span class="nav-label">Profile</span>
-          </router-link>
-        </template>
-
-        <!-- Volunteer Nav -->
-        <template v-if="user.role === 'volunteer'">
-          <router-link :to="homePath" class="nav-item">
-            <span class="nav-icon">🏠</span>
-            <span class="nav-label">Home</span>
-          </router-link>
-          <router-link to="/calendar" class="nav-item">
-            <span class="nav-icon">📅</span>
-            <span class="nav-label">Opportunities</span>
-          </router-link>
-          <router-link to="/my-shifts" class="nav-item">
-            <span class="nav-icon">📋</span>
-            <span class="nav-label">My Shifts</span>
-          </router-link>
-          <router-link to="/profile" class="nav-item">
-            <span class="nav-icon">👤</span>
-            <span class="nav-label">Profile</span>
-          </router-link>
-        </template>
-
-        <!-- Staff/Admin Nav -->
-        <template v-if="user.role === 'staff'">
-          <router-link :to="homePath" class="nav-item">
-            <span class="nav-icon">🏠</span>
-            <span class="nav-label">Dashboard</span>
-          </router-link>
-          <router-link to="/staff/users" class="nav-item">
-            <span class="nav-icon">👥</span>
-            <span class="nav-label">Users</span>
-          </router-link>
-          <router-link to="/staff/events" class="nav-item">
-            <span class="nav-icon">📅</span>
-            <span class="nav-label">Events</span>
-          </router-link>
-          <router-link to="/profile" class="nav-item">
-            <span class="nav-icon">⚙️</span>
-            <span class="nav-label">Settings</span>
-          </router-link>
-        </template>
+        <router-link :to="homePath" class="nav-item">
+          <span class="nav-icon">🏠</span>
+          <span class="nav-label">Home</span>
+        </router-link>
+        
+        <router-link to="/calendar" class="nav-item">
+          <span class="nav-icon">📅</span>
+          <span class="nav-label">Calendar</span>
+        </router-link>
+        
+        <router-link to="/my-plans" class="nav-item">
+          <span class="nav-icon">📋</span>
+          <span class="nav-label">My Activities</span>
+        </router-link>
+        
+        <router-link to="/profile" class="nav-item">
+          <span class="nav-icon">👤</span>
+          <span class="nav-label">Profile</span>
+        </router-link>
       </nav>
     </div>
   </div>
@@ -89,40 +49,39 @@ import { useRoute } from 'vue-router';
 
 const route = useRoute();
 
-// User state - In production, this should come from your auth store (Pinia/Vuex)
-// The login/signup page will set this after authentication
+// ============================================
+// CHANGE THIS ROLE TO TEST DIFFERENT VIEWS
+// Options: 'beneficiary', 'volunteer', 'staff'
+// ============================================
 const user = ref({ 
   name: "Xuan Yu", 
-  role: 'volunteer' // This will be set by login/signup
+  role: 'beneficiary' // ← CHANGE THIS LINE TO TEST
 });
 
-// TODO: Replace with actual auth store
-// Example: 
-// import { useAuthStore } from '@/stores/auth'
-// const authStore = useAuthStore()
-// const user = computed(() => authStore.user)
-
-// Compute home path based on role
+// Compute home path based on role (only thing that changes)
 const homePath = computed(() => {
-  const roleRoutes = {
+  const routes = {
     beneficiary: '/userhome',
-    caregiver: '/userhome',
     volunteer: '/volunteerhome',
     staff: '/staffhome'
   };
-  return roleRoutes[user.value.role] || '/';
+  return routes[user.value.role] || '/';
 });
 
-// Hide bottom nav on certain pages (login, 404, etc.)
+// Hide header and nav on auth pages
+const hideOnRoutes = ['home', 'NotFound', 'Login', 'Signup', 'ForgotPassword'];
+
+const showHeader = computed(() => {
+  return !hideOnRoutes.includes(route.name);
+});
+
 const showBottomNav = computed(() => {
-  const hideNavRoutes = ['home', 'NotFound', 'Login', 'Signup'];
-  return !hideNavRoutes.includes(route.name);
+  return !hideOnRoutes.includes(route.name);
 });
-
 </script>
 
 <style>
-/* Global Resets */
+/* Keep all your existing styles unchanged */
 * {
   margin: 0;
   padding: 0;
@@ -136,7 +95,6 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* App Wrapper */
 #app-wrapper {
   display: flex;
   justify-content: center;
@@ -147,7 +105,6 @@ body {
   padding: 20px;
 }
 
-/* Mobile Frame */
 .mobile-frame {
   width: 100%;
   max-width: 430px;
@@ -162,7 +119,6 @@ body {
   overflow: hidden;
 }
 
-/* Header */
 .app-header {
   padding: 16px 20px;
   background: white;
@@ -186,7 +142,6 @@ body {
   object-fit: contain;
 }
 
-/* Scroll Area */
 .scroll-area {
   flex: 1;
   overflow-y: auto;
@@ -196,7 +151,10 @@ body {
   scroll-behavior: smooth;
 }
 
-/* Hide scrollbar for cleaner look */
+.scroll-area.full-screen {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
 .scroll-area::-webkit-scrollbar {
   width: 6px;
 }
@@ -214,7 +172,6 @@ body {
   background: #94a3b8;
 }
 
-/* Bottom Navigation */
 .bottom-nav {
   position: sticky;
   bottom: 0;
@@ -239,9 +196,9 @@ body {
   text-decoration: none;
   color: #94a3b8;
   transition: all 0.2s;
-  padding: 8px 16px;
+  padding: 8px 12px;
   border-radius: 12px;
-  min-width: 70px;
+  min-width: 65px;
 }
 
 .nav-item:hover {
@@ -250,17 +207,17 @@ body {
 }
 
 .nav-icon {
-  font-size: 24px;
+  font-size: 22px;
   transition: transform 0.2s;
 }
 
 .nav-label {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.3px;
+  text-align: center;
 }
 
-/* Active nav item */
 .nav-item.router-link-active {
   color: #667eea;
 }
@@ -273,7 +230,6 @@ body {
   font-weight: 700;
 }
 
-/* Page Transitions */
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.2s ease;
@@ -284,7 +240,6 @@ body {
   opacity: 0;
 }
 
-/* Responsive - Full screen on mobile */
 @media (max-width: 480px) {
   #app-wrapper {
     padding: 0;
@@ -300,14 +255,12 @@ body {
   }
 }
 
-/* Tablet and desktop - keep frame */
 @media (min-width: 481px) {
   .mobile-frame {
     height: 85vh;
   }
 }
 
-/* Accessibility */
 @media (prefers-reduced-motion: reduce) {
   .scroll-area {
     scroll-behavior: auto;

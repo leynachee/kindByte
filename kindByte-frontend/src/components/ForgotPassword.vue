@@ -1,4 +1,5 @@
 <template>
+<<<<<<< HEAD
     <div class="auth-page">
         <div class="logo-container">
             <img src="/logo.png" alt="Minds Logo" />
@@ -37,390 +38,232 @@
                 </div>
             </form>
         </div>
+=======
+  <div class="auth-page">
+    <div class="logo-container">
+      <img src="@/assets/minds-logo.png" alt="Minds Logo" />
+>>>>>>> main
     </div>
+
+    <div class="form-container">
+      <h2 class="title">Forgot Password?</h2>
+      <p>Enter your email address and we'll send you a link to reset your password.</p>
+
+      <form @submit.prevent="handleForgotPassword">
+        <div class="input-group">
+          <label for="email">Email Address</label>
+          <input 
+            type="email" 
+            id="email" 
+            v-model="email" 
+            placeholder="example@minds.org.sg" 
+            required 
+          />
+          <span v-if="errors.email" class="error-message">{{ errors.email }}</span>
+        </div>
+
+        <button type="submit" class="btn">Send Reset Link</button>
+
+        <div class="switch-text">
+          Remember your password?
+          <RouterLink :to="{ name: 'Login' }">Log in</RouterLink>
+        </div>
+      </form>
+    </div>
+  </div>
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
-// import axios from 'axios'
-
-const router = useRouter()
-
-const userID = ref('')
-const email = ref('')
-const errors = reactive({ userID: '', email: '' })
-
-// function validateEmail(email) {
-//     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-//     return re.test(email)
-// }
-
-// async function handleLogin() {
-//     // reset errors
-//     errors.userID = ''
-//     errors.email = ''
-
-//     // client-side validation
-//     if (!validateuserID(userID.value)) {
-//         errors.userID = 'Please enter a valid userID'
-//     }
-//     if (email.value.trim() === '') {
-//         errors.email = 'email is required'
-//     }
-
-//     if (!errors.userID && !errors.email) {
-//         try {
-//             const loginBody = {
-//                 userID: userID.value,
-//                 email: email.value,
-//             }
-
-//             const response = await axios.post('http://localhost:8000/api/auth/login', loginBody, {
-//                 headers: { 'Content-Type': 'application/json' },
-//             })
-
-//             if (response.status === 200) {
-//                 const { token, user } = response.data
-
-//                 if (!user || !token) {
-//                     throw new Error('Invalid server response: missing user or token')
-//                 }
-
-//                 // Save token + user info
-//                 sessionStorage.setItem('authToken', token)
-//                 sessionStorage.setItem('user_id', user.id)
-//                 sessionStorage.setItem('fridgeId', user.fridge_id)
-//                 sessionStorage.setItem('profile_pic', user.profile_pic || '../public/profile-icon.png')
-
-//                 // redirect after a short delay
-//                 setTimeout(() => router.push('/userhome'), 1000)
-//             }
-//         } catch (err) {
-//             console.error('❌ Login failed:', err)
-
-//             // Axios error handling
-//             if (err.response) {
-//                 const status = err.response.status
-//                 const msg = err.response.data?.message || ''
-
-//                 if (status === 404) {
-//                     errors.userID = 'No account found with this userID'
-//                 } else if (status === 401) {
-//                     errors.email = 'Incorrect email'
-//                 } else if (status === 400) {
-//                     errors.userID = msg || 'Invalid request'
-//                 } else if (status >= 500) {
-//                     errors.userID = 'Server error, please try again later'
-//                 } else {
-//                     errors.email = 'Login failed, please check your credentials'
-//                 }
-//             } else {
-//                 // No response from server
-//                 errors.userID = 'Unable to connect to server. Please try again later.'
-//             }
-//         }
-//     }
-// }
-
-function handleForgotPassword() {
-  alert('Password reset link would be sent to your email!')
-}
-
-</script>
-
-<style scoped>
-* {
+  import { ref, reactive } from 'vue'
+  import { useRouter } from 'vue-router'
+  
+  const router = useRouter()
+  const email = ref('')
+  const successMessage = ref('') // New ref for the message
+  const errors = reactive({ email: '' })
+  
+  function handleForgotPassword() {
+    errors.email = ''
+  
+    if (!email.value.includes('@')) {
+      errors.email = 'Please enter a valid email'
+      return
+    }
+  
+    // 1. Set the success message
+    successMessage.value = 'Reset link sent! Redirecting...'
+  
+    // 2. Wait 2 seconds so the user can see the message, then redirect
+    setTimeout(() => {
+      successMessage.value = ''
+      router.push({ name: 'Login' })
+    }, 2000)
+  }
+  </script>
+  
+  <style scoped>
+  * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
     font-family: 'Plus Jakarta Sans', sans-serif;
-    color: black;
-}
-
-body {
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    background-color: #cccccc;
+  }
+  
+  .auth-page {
+    min-height: 100%;
+    width: 100%;
     display: flex;
     flex-direction: column;
-    align-items: center;
     justify-content: center;
+    align-items: center;
     padding: 40px 20px;
-    position: relative;
-    overflow-x: hidden;
-}
-
-.auth-page {
-    min-height: 100vh;
-    width: 100vw;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    background:
-        linear-gradient(rgba(255, 255, 255, 0.678), rgba(255, 255, 255, 0.654)),
-        url('../../public/login.jpg') center/cover no-repeat;
-    background-size: 10% auto;
-    /* Adjust percentage as needed */
-    background-position: center;
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    position: relative;
-}
-
-.form-container h2,
-.form-container p {
-    text-align: center;
-}
-
-.title {
-    font-family: 'Bricolage Grotesque', sans-serif;
-    color: #00A5E3;
-}
-
-/* Decorative food images */
-.decoration {
-    position: fixed;
-    z-index: 1;
-}
-
-/* .decoration.top-right {
-    top: 20px;
-    right: 20px;
-    width: 200px;
-    height: 200px;
-    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><circle cx="100" cy="80" r="20" fill="%23ffd93d"/><path d="M80 100 Q100 80 120 100" stroke="%23228b22" stroke-width="3" fill="none"/><ellipse cx="100" cy="140" rx="15" ry="20" fill="%23ff6b6b"/></svg>') no-repeat;
-}
-
-.decoration.bottom-left {
-    bottom: 20px;
-    left: 20px;
-    width: 200px;
-    height: 200px;
-    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><circle cx="50" cy="50" r="15" fill="%23ff6b6b"/><circle cx="80" cy="45" r="15" fill="%23ff6b6b"/><circle cx="65" cy="70" r="15" fill="%23ff6b6b"/><path d="M100 100 L120 80 L140 100" stroke="%23228b22" stroke-width="3" fill="none"/></svg>') no-repeat;
-}
-
-.decoration.bottom-right {
-    bottom: 20px;
-    right: 20px;
-    width: 180px;
-    height: 180px;
-    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180"><ellipse cx="90" cy="60" rx="25" ry="30" fill="%23ff69b4"/><path d="M70 100 Q90 80 110 100 Q90 120 70 100" fill="%23ffd93d"/><rect x="85" y="120" width="10" height="40" fill="%23228b22"/></svg>') no-repeat;
-} */
-
-.logo-container {
-    width: 180px;
-    height: 180px;
-    background: #F9FAFB;
+  }
+  
+  .logo-container {
+    width: 100px;
+    height: 100px;
+    background: white;
     border-radius: 50%;
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-bottom: 40px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-    z-index: 2;
-    position: relative;
-    overflow: hidden;
-}
-
-.logo-container img {
-    width: 120px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+  
+  .logo-container img {
+    width: 70px;
     height: auto;
-    object-fit: cover;
-}
-
-.form-container {
+    object-fit: contain;
+  }
+  
+  .form-container {
     background: white;
-    border-radius: 30px;
-    padding: 50px 60px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    border-radius: 24px;
+    padding: 36px 32px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
     width: 100%;
-    max-width: 500px;
-    position: relative;
-    z-index: 2;
-}
-
-.form-wrapper {
-    position: relative;
-    overflow: hidden;
-}
-
-.form-section {
-    transition:
-        opacity 0.3s ease,
-        transform 0.3s ease;
-}
-
-.form-section.hidden {
-    display: none;
-}
-
-.form-section h2 {
-    font-size: 28px;
-    text-align: center;
-    margin-bottom: 10px;
-    color: #333;
-}
-
-.form-section p {
-    text-align: center;
-    color: #666;
-    margin-bottom: 35px;
-    font-size: 15px;
-}
-
-.input-group {
-    margin-bottom: 25px;
-}
-
-.input-group label {
-    display: block;
+    max-width: 380px;
+  }
+  
+  .title {
+    font-size: 24px;
+    color: #00A5E3;
     margin-bottom: 8px;
-    color: #333;
-    font-weight: 500;
-    font-size: 15px;
-}
-
-.input-group input {
+    text-align: center;
+    font-weight: 700;
+  }
+  
+  .form-container > p {
+    text-align: center;
+    color: #64748b;
+    margin-bottom: 28px;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  
+  .input-group {
+    margin-bottom: 20px;
+  }
+  
+  .input-group label {
+    display: block;
+    margin-bottom: 6px;
+    color: #1e293b;
+    font-weight: 600;
+    font-size: 13px;
+  }
+  
+  .input-group input {
     width: 100%;
-    padding: 15px 20px;
-    border: none;
-    background: #e8e8e8;
-    border-radius: 25px;
-    font-size: 15px;
-    transition: all 0.3s;
+    padding: 12px 16px;
+    border: 2px solid #e2e8f0;
+    background: white;
+    border-radius: 12px;
+    font-size: 14px;
+    transition: all 0.2s;
     outline: none;
-}
-
-.input-group input:focus {
-    background: #ddd;
-    box-shadow: 0 0 0 3px rgba(68, 112, 77, 0.1);
-}
-
-.input-group input::placeholder {
-    color: #999;
-}
-
-.error-message {
-    color: #ff4757;
+    color: #1e293b;
+  }
+  
+  .input-group input:focus {
+    border-color: #00A5E3;
+    box-shadow: 0 0 0 3px rgba(0, 165, 227, 0.1);
+  }
+  
+  .input-group input::placeholder {
+    color: #94a3b8;
+  }
+  
+  .error-message {
+    color: #ef4444;
     font-size: 12px;
-    margin-top: 5px;
-    display: none;
-}
-
-.password-strength {
-    height: 4px;
-    border-radius: 2px;
-    margin-top: 8px;
-    transition: all 0.3s;
-}
-
-.strength-weak {
-    background: #ff4757;
-    width: 33%;
-}
-
-.strength-medium {
-    background: #ffa502;
-    width: 66%;
-}
-
-.strength-strong {
-    background: #26de81;
+    margin-top: 4px;
+    display: block;
+  }
+  
+  .btn {
     width: 100%;
-}
-
-.btn {
-    width: 100%;
-    padding: 15px;
-    background: #00A5E3;
+    padding: 14px;
+    background: linear-gradient(135deg, #00A5E3 0%, #0088bb 100%);
     color: white;
     border: none;
-    border-radius: 25px;
-    font-size: 16px;
-    font-weight: 600;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 700;
     cursor: pointer;
     transition: all 0.3s;
-    margin-top: 10px;
-}
-
-.btn:hover {
-    background: #007BB0;
+    margin-top: 8px;
+    box-shadow: 0 4px 12px rgba(0, 165, 227, 0.3);
+  }
+  
+  .btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(68, 112, 77, 0.3);
-}
-
-.btn:active {
+    box-shadow: 0 6px 20px rgba(0, 165, 227, 0.4);
+  }
+  
+  .btn:active {
     transform: translateY(0);
-}
-
-.switch-text {
+  }
+  
+  .switch-text {
     text-align: center;
-    margin-top: 25px;
-    color: #666;
-    font-size: 14px;
-}
-
-.switch-text a {
-    color: #00A5E3;
-    font-weight: 600;
-    text-decoration: none;
-    cursor: pointer;
-}
-
-.switch-text a:hover {
-    text-decoration: underline;
-}
-
-/* .checkbox-group {
-    display: flex;
-    align-items: center;
-    margin-bottom: 20px;
-}
-
-.checkbox-group input {
-    margin-right: 10px;
-    cursor: pointer;
-    width: 18px;
-    height: 18px;
-}
-
-.checkbox-group label {
-    font-size: 14px;
-    color: #666;
-    cursor: pointer;
-} */
-
-.forgot-password {
-    text-align: right;
-    margin-top: -15px;
-    margin-bottom: 20px;
-}
-
-.forgot-password a {
-    color:  #00A5E3;
+    margin-top: 20px;
+    color: #64748b;
     font-size: 13px;
+  }
+  
+  .switch-text a {
+    color: #00A5E3;
+    font-weight: 700;
     text-decoration: none;
-}
-
-.forgot-password a:hover {
+    margin-left: 4px;
+  }
+  
+  .switch-text a:hover {
     text-decoration: underline;
+  }
+
+  .toast-notification {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #10b981; /* Green success color */
+  color: white;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  z-index: 100;
+  width: 90%;
+  text-align: center;
+  animation: slideDown 0.3s ease-out;
 }
 
-@media (max-width: 768px) {
-    .form-container {
-        padding: 40px 30px;
-    }
-
-    .logo-container {
-        width: 150px;
-        height: 150px;
-    }
-
-    .decoration {
-        display: none;
-    }
+@keyframes slideDown {
+  from { transform: translate(-50%, -20px); opacity: 0; }
+  to { transform: translate(-50%, 0); opacity: 1; }
 }
-</style>
-
+  </style>
