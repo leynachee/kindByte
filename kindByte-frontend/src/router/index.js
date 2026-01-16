@@ -73,7 +73,6 @@ const router = createRouter({
       component: () => import('../components/StaffHome.vue'),
       meta: { requiresAuth: true, roles: ['staff'] }
     },
-
     { 
       path: '/staff/events', 
       name: 'StaffEvents',
@@ -94,52 +93,50 @@ const router = createRouter({
     },
     {
       path: '/staff/calendar',
-      name: 'Calendar',
+      name: 'StaffCalendar',
       component: () => import('../views/StaffCalendar.vue'), 
-      meta: { public: true }
+      meta: { requiresAuth: true, roles: ['staff'] }
     },
     
-    // Shared Routes
+    // --- UPDATED PROFILE ROUTES ---
     {
       path: '/profile',
       name: 'Profile',
       component: () => import('../components/Profile.vue'),
-      meta: { requiresAuth: true, roles: ['beneficiary', 'caregiver', 'volunteer', 'staff'] }
+      meta: { requiresAuth: true, roles: ['beneficiary', 'caregiver', 'volunteer'] }
     },
-    
-
-    // To view an event in depth
     {
-      path: '/viewevent/:id', // The :id is the variable we pass
+      path: '/staff-profile',
+      name: 'StaffProfile',
+      component: () => import('../components/StaffProfile.vue'),
+      meta: { requiresAuth: true, roles: ['staff'] }
+    },
+    // ------------------------------
+
+    {
+      path: '/viewevent/:id', 
       name: 'ViewEvent',
       component: () => import('../views/ViewEvent.vue'),
       meta: { requiresAuth: true, roles: ['beneficiary', 'caregiver', 'volunteer', 'staff'] }
     },
-    
-    // After viewing the fine-grain details of an event, move on to register for the event
-
     {
-      path: '/registerevent/:id', // The :id is the variable we pass
+      path: '/registerevent/:id', 
       name: 'RegisterEvent',
       component: () => import('../views/RegisterEvent.vue'),
       meta: { requiresAuth: true, roles: ['beneficiary', 'caregiver', 'volunteer'] }
     },
-
     {
       path: '/manage-events',
       name: 'ManageEvents',
       component: () => import('@/components/ManageEvents.vue'),
       meta: { requiresAuth: true, roles: ['staff'] }
     },
-
     {
       path: '/user-management',
       name: 'UserManagement',
       component: () => import('@/components/UserManagement.vue'),
       meta: { requiresAuth: true, roles: ['staff'] }
-
     }, 
-    
     {
       path: '/attendance-report',
       name: 'AttendanceReport',

@@ -1,14 +1,12 @@
 <template>
   <div id="app-wrapper">
     <div class="mobile-frame">
-      <!-- Header - hide on login/signup -->
       <header class="app-header" v-if="showHeader">
         <div class="header-left">
           <img src="@/assets/minds-logo.png" alt="MINDS" class="logo" />
         </div>
       </header>
 
-      <!-- Main Content Area -->
       <main class="scroll-area" :class="{ 'full-screen': !showHeader }">
         <router-view v-slot="{ Component }">
           <transition name="fade" mode="out-in">
@@ -17,21 +15,20 @@
         </router-view>
       </main>
 
-      <!-- Bottom Navigation - SAME FOR ALL ROLES -->
       <nav class="bottom-nav" v-if="showBottomNav">
         <router-link :to="homePath" class="nav-item">
           <span class="nav-icon">🏠</span>
           <span class="nav-label">Home</span>
         </router-link>
         
-        <router-link to="/calendar" class="nav-item">
+        <router-link :to="calendarPath" class="nav-item">
           <span class="nav-icon">📅</span>
           <span class="nav-label">Calendar</span>
         </router-link>
         
-        <router-link to="/my-plans" class="nav-item">
+        <router-link :to="activityPath" class="nav-item">
           <span class="nav-icon">📋</span>
-          <span class="nav-label">My Activities</span>
+          <span class="nav-label">{{ activityLabel }}</span>
         </router-link>
         
         <router-link to="/profile" class="nav-item">
@@ -44,56 +41,50 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { computed } from 'vue';
 import { useRoute } from 'vue-router';
+import { authStore } from '@/authStore'; 
 
 const route = useRoute();
 
-// ============================================
-// CHANGE THIS ROLE TO TEST DIFFERENT VIEWS
-// Options: 'beneficiary', 'volunteer', 'staff'
-// ============================================
-const user = ref({ 
-  name: "Xuan Yu", 
-  role: 'beneficiary' // ← CHANGE THIS LINE TO TEST
-});
+// Get the role from your store
+const userRole = computed(() => authStore.user?.role || 'beneficiary');
+const isStaff = computed(() => userRole.value === 'staff');
 
-// Compute home path based on role (only thing that changes)
+// Dynamic Paths
 const homePath = computed(() => {
   const routes = {
-    beneficiary: '/userhome',
+    staff: '/staffhome',
     volunteer: '/volunteerhome',
-    staff: '/staffhome'
+    beneficiary: '/userhome'
   };
-  return routes[user.value.role] || '/';
+  return routes[userRole.value] || '/';
 });
 
-// Hide header and nav on auth pages
-const hideOnRoutes = ['home', 'NotFound', 'Login', 'Signup', 'ForgotPassword'];
-
-const showHeader = computed(() => {
-  return !hideOnRoutes.includes(route.name);
+// FIX: Targeting the StaffCalendar route
+const calendarPath = computed(() => {
+  // If staff, go to /staff/calendar (StaffCalendar.vue)
+  // If user, go to /calendar (ActivityCalendar.vue)
+  return isStaff.value ? '/staff/calendar' : '/calendar';
 });
 
-const showBottomNav = computed(() => {
-  return !hideOnRoutes.includes(route.name);
+const activityPath = computed(() => {
+  return isStaff.value ? '/staff/manage-events' : '/my-plans';
 });
+
+const activityLabel = computed(() => {
+  return isStaff.value ? 'Manage' : 'My Plans';
+});
+
+// Visibility logic
+const hideOnRoutes = ['Landing', 'Login', 'Signup', 'ForgotPassword'];
+const showHeader = computed(() => route.name && !hideOnRoutes.includes(route.name));
+const showBottomNav = computed(() => route.name && !hideOnRoutes.includes(route.name));
 </script>
 
 <style>
-/* Keep all your existing styles unchanged */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+/* --- THEMED MOBILE FRAME STYLES --- */
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
 #app-wrapper {
   display: flex;
@@ -102,175 +93,68 @@ body {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   min-height: 100vh;
   width: 100vw;
-  padding: 20px;
 }
 
 .mobile-frame {
   width: 100%;
-  max-width: 430px;
-  height: 90vh;
-  max-height: 932px;
+  max-width: 400px;      /* Slightly narrower for better proportion */
+  height: 800px;         /* Fixed height for a consistent look */
+  max-height: 85vh;      /* Prevents it from being taller than your screen */
   background: white;
   display: flex;
   flex-direction: column;
   position: relative;
-  border-radius: 40px;
+  border-radius: 40px;   /* The "rounded" phone look */
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   overflow: hidden;
+  margin-top: 20px;      /* Centering tweak */
 }
 
 .app-header {
   padding: 16px 20px;
   background: white;
   border-bottom: 1px solid #e2e8f0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  z-index: 10;
-  flex-shrink: 0;
 }
 
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.logo {
-  height: 28px;
-  width: auto;
-  object-fit: contain;
-}
+.logo { height: 28px; }
 
 .scroll-area {
   flex: 1;
   overflow-y: auto;
-  overflow-x: hidden;
   background: #f8fafc;
-  position: relative;
-  scroll-behavior: smooth;
 }
 
 .scroll-area.full-screen {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
-.scroll-area::-webkit-scrollbar {
-  width: 6px;
-}
-
-.scroll-area::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.scroll-area::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 3px;
-}
-
-.scroll-area::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
-
+/* --- REPAIRED BOTTOM NAV --- */
 .bottom-nav {
   position: sticky;
   bottom: 0;
   width: 100%;
-  height: 75px;
+  height: 85px;
   background: white;
-  border-top: 1px solid #e2e8f0;
   display: flex;
   justify-content: space-around;
-  align-items: center;
-  padding: 8px 0;
-  z-index: 10;
-  flex-shrink: 0;
+  border-top: 1px solid #e2e8f0;
+  padding-bottom: 20px; /* Space for home bar on mobile */
 }
 
 .nav-item {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
   text-decoration: none;
   color: #94a3b8;
-  transition: all 0.2s;
-  padding: 8px 12px;
-  border-radius: 12px;
-  min-width: 65px;
-}
-
-.nav-item:hover {
-  color: #64748b;
-  background: #f8fafc;
-}
-
-.nav-icon {
-  font-size: 22px;
-  transition: transform 0.2s;
-}
-
-.nav-label {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.3px;
-  text-align: center;
 }
 
 .nav-item.router-link-active {
-  color: #667eea;
+  color: #667eea; /* Purple highlight for active link */
 }
 
-.nav-item.router-link-active .nav-icon {
-  transform: scale(1.1);
-}
-
-.nav-item.router-link-active .nav-label {
-  font-weight: 700;
-}
-
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.2s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-
-@media (max-width: 480px) {
-  #app-wrapper {
-    padding: 0;
-    background: white;
-  }
-
-  .mobile-frame {
-    max-width: 100%;
-    height: 100vh;
-    max-height: 100vh;
-    border-radius: 0;
-    box-shadow: none;
-  }
-}
-
-@media (min-width: 481px) {
-  .mobile-frame {
-    height: 85vh;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .scroll-area {
-    scroll-behavior: auto;
-  }
-  
-  .fade-enter-active,
-  .fade-leave-active,
-  .nav-item,
-  .nav-icon {
-    transition: none;
-  }
-}
+.nav-icon { font-size: 24px; margin-bottom: 4px; }
+.nav-label { font-size: 11px; font-weight: 600; }
 </style>

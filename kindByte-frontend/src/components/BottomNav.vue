@@ -5,22 +5,36 @@
     </div>
     
     <nav class="bottom-nav">
-      <router-link to="/userhome" class="nav-item">
+      <router-link :to="isStaff ? '/staffhome' : '/userhome'" class="nav-item">
         <span class="icon">🏠</span>
         <span class="label">Home</span>
       </router-link>
       
-      <router-link to="/staffhome" class="nav-item">
-        <span class="icon">📅</span>
-        <span class="label">Calendar</span>
-      </router-link>
+      <template v-if="isStaff">
+        <router-link to="/manage-events" class="nav-item">
+          <span class="icon">⚙️</span>
+          <span class="label">Manage</span>
+        </router-link>
+        
+        <router-link to="/attendance-report" class="nav-item">
+          <span class="icon">📊</span>
+          <span class="label">Reports</span>
+        </router-link>
+      </template>
+
+      <template v-else>
+        <router-link to="/calendar" class="nav-item">
+          <span class="icon">📅</span>
+          <span class="label">Calendar</span>
+        </router-link>
+        
+        <router-link to="/my-plans" class="nav-item">
+          <span class="icon">📋</span>
+          <span class="label">My Plans</span>
+        </router-link>
+      </template>
       
-      <router-link to="/my-plans" class="nav-item">
-        <span class="icon">📋</span>
-        <span class="label">My Plans</span>
-      </router-link>
-      
-      <router-link to="/profile" class="nav-item">
+      <router-link :to="isStaff ? '/staff-profile' : '/profile'" class="nav-item">
         <span class="icon">👤</span>
         <span class="label">Profile</span>
       </router-link>
@@ -28,7 +42,24 @@
   </div>
 </template>
 
+<script setup>
+import { computed } from 'vue';
+
+const userRole = computed(() => {
+  try {
+    // Check localStorage for the role assigned during login
+    const userData = JSON.parse(localStorage.getItem('user'));
+    return userData?.role || 'beneficiary';
+  } catch (e) {
+    return 'beneficiary';
+  }
+});
+
+const isStaff = computed(() => userRole.value === 'staff');
+</script>
+
 <style>
+/* ... (Keep all your existing CSS exactly as it is) ... */
 :root {
   --minds-blue: #0369a1;
   --bg-soft: #f8fafc;
