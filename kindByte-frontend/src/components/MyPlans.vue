@@ -11,10 +11,7 @@
           <h1>My Plans</h1>
           <p>Manage your registered activities</p>
         </div>
-        <div class="quota-info">
-          <span class="quota-label">Weekly Limit</span>
-          <strong class="quota-value">{{ weeklyCount }}/4</strong>
-        </div>
+        
       </header>
 
       <!-- Tabs -->

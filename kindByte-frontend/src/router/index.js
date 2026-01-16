@@ -43,7 +43,7 @@ const router = createRouter({
       path: '/activitycalendar', 
       name: 'ActivityCalendar',  // FIXED: Changed from 'Calendar'
       component: () => import('../components/ActivityCalendar.vue'),
-      meta: { requiresAuth: true, roles: ['beneficiary', 'caregiver', 'volunteer', 'staff'] }  // FIXED: Added all roles
+      meta: { requiresAuth: true, roles: ['beneficiary', 'caregiver', 'volunteer'] }  // FIXED: Added all roles
     },
     { 
       path: '/my-plans', 
@@ -142,6 +142,14 @@ const router = createRouter({
       component: () => import('@/components/AttendanceReport.vue'),
       meta: { requiresAuth: true, roles: ['staff'] }
     }, 
+
+    {
+      path: '/staff/calendar',
+      name: 'StaffCalendar',
+      component: () => import('../components/StaffCalendar.vue'),
+      meta: { requiresAuth: true, roles: ['staff'] }
+    },
+    
   ],
 })
 
