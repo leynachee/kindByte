@@ -15,11 +15,11 @@
           <span v-if="errors.name" class="error-message">{{ errors.name }}</span>
         </div>
 
-        <div class="input-group">
+        <!-- <div class="input-group">
           <label for="name">User ID</label>
           <input type="text" id="userID" v-model="userID" placeholder="Enter your User ID" required />
           <span v-if="errors.userID" class="error-message">{{ errors.userID }}</span>
-        </div>
+        </div> -->
 
         <div class="input-group">
           <label for="email">Email</label>

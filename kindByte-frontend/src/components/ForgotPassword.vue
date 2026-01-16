@@ -6,14 +6,14 @@
 
         <div class="form-container">
             <h2 class="title">Forgot Password?</h2>
-            <p>Enter your User ID to receive a password reset email.</p>
+            <p>Enter your email to receive a password reset email.</p>
 
             <form @submit.prevent="handleLogin">
-                <div class="input-group">
+                <!-- <div class="input-group">
                     <label for="userID">User ID</label>
                     <input type="userID" id="userID" v-model="userID" placeholder="Enter a valid User ID" required />
                     <span v-if="errors.userID" class="error-message">{{ errors.userID }}</span>
-                </div>
+                </div> -->
 
                 <div class="input-group">
                     <label for="email">Email</label>
