@@ -17,14 +17,19 @@
         </router-view>
       </main>
 
-      <!-- Bottom Navigation - SAME FOR ALL ROLES -->
+      <!-- Bottom Navigation -->
       <nav class="bottom-nav" v-if="showBottomNav">
-        <router-link :to="homePath" class="nav-item">
+        <!-- Home - use div with click handler instead of router-link -->
+        <div 
+          class="nav-item" 
+          :class="{ active: isHomeActive }"
+          @click="goToHome"
+        >
           <span class="nav-icon">🏠</span>
           <span class="nav-label">Home</span>
-        </router-link>
+        </div>
         
-        <router-link to="/calendar" class="nav-item">
+        <router-link to="/activitycalendar" class="nav-item">
           <span class="nav-icon">📅</span>
           <span class="nav-label">Calendar</span>
         </router-link>
@@ -44,28 +49,61 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
-import { useRoute } from 'vue-router';
+import { ref, computed, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { onAuthStateChanged } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, db } from '@/firebase';
 
 const route = useRoute();
+const router = useRouter();
 
-// ============================================
-// CHANGE THIS ROLE TO TEST DIFFERENT VIEWS
-// Options: 'beneficiary', 'volunteer', 'staff'
-// ============================================
-const user = ref({ 
-  name: "Xuan Yu", 
-  role: 'beneficiary' // ← CHANGE THIS LINE TO TEST
+const userRole = ref(null);
+
+// Fetch user role from Firestore
+onMounted(() => {
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      try {
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          userRole.value = userDoc.data().role;
+          console.log('User role from Firebase:', userRole.value);
+        }
+      } catch (error) {
+        console.error('Error fetching user role:', error);
+      }
+    } else {
+      userRole.value = null;
+    }
+  });
 });
 
-// Compute home path based on role (only thing that changes)
-const homePath = computed(() => {
-  const routes = {
-    beneficiary: '/userhome',
-    volunteer: '/volunteerhome',
-    staff: '/staffhome'
-  };
-  return routes[user.value.role] || '/';
+// Get home path based on role
+const getHomePath = () => {
+  switch (userRole.value) {
+    case 'beneficiary':
+      return '/userhome';
+    case 'caregiver':
+      return '/caregiverhome';
+    case 'staff':
+      return '/staffhome';
+    case 'volunteer':
+      return '/volunteerhome';
+    default:
+      return '/userhome';
+  }
+};
+
+// Navigate to home
+const goToHome = () => {
+  router.push(getHomePath());
+};
+
+// Check if current route is any home page
+const isHomeActive = computed(() => {
+  const homePaths = ['/userhome', '/caregiverhome', '/staffhome', '/volunteerhome'];
+  return homePaths.includes(route.path);
 });
 
 // Hide header and nav on auth pages
@@ -81,7 +119,6 @@ const showBottomNav = computed(() => {
 </script>
 
 <style>
-/* Keep all your existing styles unchanged */
 * {
   margin: 0;
   padding: 0;
@@ -199,6 +236,7 @@ body {
   padding: 8px 12px;
   border-radius: 12px;
   min-width: 65px;
+  cursor: pointer;
 }
 
 .nav-item:hover {
@@ -218,15 +256,19 @@ body {
   text-align: center;
 }
 
-.nav-item.router-link-active {
+/* Active state for both router-link and custom home button */
+.nav-item.router-link-active,
+.nav-item.active {
   color: #667eea;
 }
 
-.nav-item.router-link-active .nav-icon {
+.nav-item.router-link-active .nav-icon,
+.nav-item.active .nav-icon {
   transform: scale(1.1);
 }
 
-.nav-item.router-link-active .nav-label {
+.nav-item.router-link-active .nav-label,
+.nav-item.active .nav-label {
   font-weight: 700;
 }
 

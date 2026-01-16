@@ -40,7 +40,7 @@ const router = createRouter({
       meta: { requiresAuth: true, roles: ['beneficiary', 'caregiver'] }
     },
     { 
-      path: '/calendar', 
+      path: '/activitycalendar', 
       name: 'Calendar', 
       component: () => import('../components/ActivityCalendar.vue'),
       meta: { requiresAuth: true, roles: ['beneficiary', 'caregiver'] }
