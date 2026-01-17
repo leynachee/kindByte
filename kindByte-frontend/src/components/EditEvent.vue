@@ -91,6 +91,24 @@
             </select>
             <span v-if="isAttempted && !eventData.category" class="error-text">Please select a category</span>
           </div>
+
+                    <div class="form-group">
+            <label class="form-label required">Payment Needed</label>
+            <select v-model="eventData.paymentNeeded" class="form-input form-select">
+              <option :value="null" disabled>Select Option</option>
+              <option :value="true">Yes</option>
+              <option :value="false">No</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label required">Wheelchair Accessible</label>
+            <select v-model="eventData.wheelchairAccessible" class="form-input form-select">
+              <option :value="null" disabled>Select Option</option>
+              <option :value="true">Yes</option>
+              <option :value="false">No</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -280,15 +298,24 @@ export default {
       endTime: '',
       maxCapacity: 0,
       location: '',
-      category: ''
+      category: '',
+      wheelchairAccessible: null,
+      paymentNeeded: null
     });
 
     const questions = ref([]);
 
     // --- Validation ---
     const isFormValid = computed(() => {
-      return eventData.value.name && eventData.value.description && eventData.value.startTime && eventData.value.endTime && eventData.value.maxCapacity
-      && eventData.value.location && questions.value.every(q =>q.description);
+      return eventData.value.name && 
+             eventData.value.description && 
+             eventData.value.startTime && 
+             eventData.value.endTime && 
+             eventData.value.maxCapacity && 
+             eventData.value.location && 
+             eventData.wheelchairAccessible &&
+             eventData.paymentNeeded &&
+             questions.value.every(q =>q.description);
     });
 
     // --- Fetch Data ---
@@ -360,7 +387,9 @@ export default {
           maxCount: eventData.value.maxCapacity,
           location: eventData.value.location,
           type: eventData.value.category,
-          questionID: questionIds
+          questionID: questionIds,
+          wheelchairAccessible: eventData.value.wheelchairAccessible,
+          paymentNeeded: eventData.value.paymentNeeded
         });
 
         await batch.commit();

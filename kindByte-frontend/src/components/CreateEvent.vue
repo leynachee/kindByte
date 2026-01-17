@@ -44,11 +44,29 @@
           </div>
 
           <div class="form-group">
-              <label class="form-label required">Category</label>
-              <select v-model="eventData.category" class="form-input form-select">
-                <option value="" disabled>Select Category</option>
-                <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
-              </select>
+            <label class="form-label required">Category</label>
+            <select v-model="eventData.category" class="form-input form-select">
+              <option value="" disabled>Select Category</option>
+              <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label required">Payment Needed</label>
+            <select v-model="eventData.paymentNeeded" class="form-input form-select">
+              <option :value="null" disabled>Select Option</option>
+              <option :value="true">Yes</option>
+              <option :value="false">No</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label required">Wheelchair Accessible</label>
+            <select v-model="eventData.wheelchairAccessible" class="form-input form-select">
+              <option :value="null" disabled>Select Option</option>
+              <option :value="true">Yes</option>
+              <option :value="false">No</option>
+            </select>
           </div>
         </div>
       </div>
@@ -126,7 +144,7 @@ import { ref, reactive, computed } from 'vue';
 import { useRouter } from 'vue-router';
 // Firebase Imports
 import { db } from '@/firebase';
-import { doc, collection, addDoc, writeBatch, Timestamp } from 'firebase/firestore';
+import { doc, collection, writeBatch, Timestamp } from 'firebase/firestore';
 
 const router = useRouter();
 const isAttempted = ref(false);
@@ -144,6 +162,8 @@ const eventData = reactive({
   location: '',
   maxCapacity: null,
   category: '',
+  wheelchairAccessible: null,
+  paymentNeeded: null
 });
 
 const questions = ref([]);
@@ -158,6 +178,8 @@ const isFormValid = computed(() => {
     eventData.location && 
     eventData.maxCapacity && 
     eventData.category &&
+    eventData.wheelchairAccessible &&
+    eventData.paymentNeeded &&
     questions.value.every(q => q.description.trim() !== '')
   );
 });
@@ -215,8 +237,6 @@ const handleSubmit = async () => {
       startTime: Timestamp.fromDate(new Date(eventData.startTime)),
       endTime: Timestamp.fromDate(new Date(eventData.endTime)),
       questionID: questionIDs, // Store the array of IDs
-      imageUrl: eventData.imageUrl || '',
-      createdAt: Timestamp.now()
     });
 
     await batch.commit();
