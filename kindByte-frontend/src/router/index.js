@@ -40,10 +40,10 @@ const router = createRouter({
       meta: { requiresAuth: true, roles: ['beneficiary', 'caregiver'] }
     },
     { 
-      path: '/calendar', 
-      name: 'ParticipantCalendar', 
+      path: '/activitycalendar', 
+      name: 'ActivityCalendar',  // FIXED: Changed from 'Calendar'
       component: () => import('../components/ActivityCalendar.vue'),
-      meta: { requiresAuth: true, roles: ['beneficiary', 'caregiver'] }
+      meta: { requiresAuth: true, roles: ['beneficiary', 'caregiver', 'volunteer'] }  // FIXED: Added all roles
     },
     { 
       path: '/my-plans', 
@@ -73,7 +73,6 @@ const router = createRouter({
       component: () => import('../components/StaffHome.vue'),
       meta: { requiresAuth: true, roles: ['staff'] }
     },
-
     { 
       path: '/staff/events', 
       name: 'StaffEvents',
@@ -96,9 +95,9 @@ const router = createRouter({
     },
     {
       path: '/staff/calendar',
-      name: 'StaffCalendar',
-      component: () => import('../views/StaffHomeView.vue'), 
-      meta: { requiresAuth: true, roles: ['staff'] }
+      name: 'StaffCalendar',  // FIXED: John changed to /StaffCalendar
+      component: () => import('../components/StaffCalendar.vue'), 
+      meta: { public: true }
     },
     
     // Shared Routes
@@ -108,20 +107,18 @@ const router = createRouter({
       component: () => import('../components/Profile.vue'),
       meta: { requiresAuth: true, roles: ['beneficiary', 'caregiver', 'volunteer', 'staff'] }
     },
-    
 
     // To view an event in depth
     {
-      path: '/viewevent/:id', // The :id is the variable we pass
+      path: '/viewevent/:id',
       name: 'ViewEvent',
       component: () => import('../views/ViewEventView.vue'),
       meta: { requiresAuth: true, roles: ['beneficiary', 'caregiver', 'volunteer', 'staff'] }
     },
     
     // After viewing the fine-grain details of an event, move on to register for the event
-
     {
-      path: '/registerevent/:id', // The :id is the variable we pass
+      path: '/registerevent/:id',
       name: 'RegisterEvent',
       component: () => import('../views/RegisterEventView.vue'),
       meta: { requiresAuth: true, roles: ['beneficiary', 'caregiver', 'volunteer'] }
@@ -139,7 +136,6 @@ const router = createRouter({
       name: 'UserManagement',
       component: () => import('@/components/UserManagement.vue'),
       meta: { requiresAuth: true, roles: ['staff'] }
-
     }, 
     
     {
@@ -148,6 +144,14 @@ const router = createRouter({
       component: () => import('@/components/AttendanceReport.vue'),
       meta: { requiresAuth: true, roles: ['staff'] }
     }, 
+
+    {
+      path: '/staff/calendar',
+      name: 'StaffCalendar',
+      component: () => import('../components/StaffCalendar.vue'),
+      meta: { requiresAuth: true, roles: ['staff'] }
+    },
+    
   ],
 })
 
