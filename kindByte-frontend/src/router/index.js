@@ -93,8 +93,8 @@ const router = createRouter({
     },
     {
       path: '/staff/calendar',
-      name: 'StaffCalendar',  // FIXED: Changed from duplicate 'Calendar'
-      component: () => import('../views/StaffHomeView.vue'), 
+      name: 'StaffCalendar',  // FIXED: John changed to /StaffCalendar
+      component: () => import('../components/StaffCalendar.vue'), 
       meta: { public: true }
     },
     
