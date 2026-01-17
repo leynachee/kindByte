@@ -79,6 +79,8 @@ const router = createRouter({
       component: () => import('../components/ActivityCalendar.vue'),
       meta: { requiresAuth: true, roles: ['staff'] }
     },
+
+    // Events
     {
       path: '/createevent',
       name: 'CreateEvent',
