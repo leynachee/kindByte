@@ -41,7 +41,7 @@ const router = createRouter({
     },
     { 
       path: '/calendar', 
-      name: 'Calendar', 
+      name: 'ParticipantCalendar', 
       component: () => import('../components/ActivityCalendar.vue'),
       meta: { requiresAuth: true, roles: ['beneficiary', 'caregiver'] }
     },
@@ -81,12 +81,7 @@ const router = createRouter({
       meta: { requiresAuth: true, roles: ['staff'] }
     },
 
-    // Account Details
-    {
-      path: '/login',
-      name: 'Login',
-      component: () => import('../views/LoginView.vue'),
-    },
+    // Events
     {
       path: '/createevent',
       name: 'CreateEvent',
@@ -101,9 +96,9 @@ const router = createRouter({
     },
     {
       path: '/staff/calendar',
-      name: 'Calendar',
+      name: 'StaffCalendar',
       component: () => import('../views/StaffHomeView.vue'), 
-      meta: { public: true }
+      meta: { requiresAuth: true, roles: ['staff'] }
     },
     
     // Shared Routes
