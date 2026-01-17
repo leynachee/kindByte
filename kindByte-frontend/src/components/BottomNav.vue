@@ -5,34 +5,15 @@
     </div>
     
     <nav class="bottom-nav">
-      <router-link :to="isStaff ? '/staffhome' : '/userhome'" class="nav-item">
+      <div class="nav-item" :class="{ active: isHomeActive }" @click="goToHome">
         <span class="icon">🏠</span>
         <span class="label">Home</span>
-      </router-link>
+      </div>
       
-      <template v-if="isStaff">
-        <router-link to="/manage-events" class="nav-item">
-          <span class="icon">⚙️</span>
-          <span class="label">Manage</span>
-        </router-link>
-        
-        <router-link to="/attendance-report" class="nav-item">
-          <span class="icon">📊</span>
-          <span class="label">Reports</span>
-        </router-link>
-      </template>
-
-      <template v-else>
-        <router-link to="/calendar" class="nav-item">
-          <span class="icon">📅</span>
-          <span class="label">Calendar</span>
-        </router-link>
-        
-        <router-link to="/my-plans" class="nav-item">
-          <span class="icon">📋</span>
-          <span class="label">My Plans</span>
-        </router-link>
-      </template>
+      <router-link to="/activitycalendar" class="nav-item">
+        <span class="icon">📅</span>
+        <span class="label">Calendar</span>
+      </router-link>
       
       <router-link :to="isStaff ? '/staff-profile' : '/profile'" class="nav-item">
         <span class="icon">👤</span>
@@ -43,19 +24,58 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
+import { onAuthStateChanged } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, db } from '@/firebase'; // Use your existing firebase exports
 
-const userRole = computed(() => {
-  try {
-    // Check localStorage for the role assigned during login
-    const userData = JSON.parse(localStorage.getItem('user'));
-    return userData?.role || 'beneficiary';
-  } catch (e) {
-    return 'beneficiary';
-  }
+const router = useRouter();
+const route = useRoute();
+const userRole = ref(null);
+
+onMounted(() => {
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      try {
+        // Adjust 'users' to your collection name and 'role' to your field name
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          userRole.value = userDoc.data().role;
+          console.log('User role:', userRole.value); // Debug log
+        }
+      } catch (error) {
+        console.error('Error fetching user role:', error);
+      }
+    }
+  });
 });
 
-const isStaff = computed(() => userRole.value === 'staff');
+const goToHome = () => {
+  console.log('Navigating home, role is:', userRole.value); // Debug log
+  
+  // Adjust these to match your actual roles and routes
+  switch (userRole.value) {
+    case 'admin':
+      router.push('/adminhome');
+      break;
+    case 'caregiver':
+      router.push('/caregiverhome');
+      break;
+    case 'staff':
+      router.push('/staffhome');
+      break;
+    case 'user':
+    default:
+      router.push('/userhome');
+      break;
+  }
+};
+
+const isHomeActive = computed(() => {
+  const homePaths = ['/userhome', '/adminhome', '/caregiverhome', '/staffhome'];
+  return homePaths.includes(route.path);
+});
 </script>
 
 <style>
@@ -105,9 +125,11 @@ body {
   justify-content: center;
   text-decoration: none;
   color: #94a3b8;
+  cursor: pointer;
 }
 
-.nav-item.router-link-active {
+.nav-item.router-link-active,
+.nav-item.active {
   color: var(--minds-blue);
 }
 

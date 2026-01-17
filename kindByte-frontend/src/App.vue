@@ -15,13 +15,19 @@
         </router-view>
       </main>
 
+      <!-- Bottom Navigation -->
       <nav class="bottom-nav" v-if="showBottomNav">
-        <router-link :to="homePath" class="nav-item">
+        <!-- Home - use div with click handler instead of router-link -->
+        <div 
+          class="nav-item" 
+          :class="{ active: isHomeActive }"
+          @click="goToHome"
+        >
           <span class="nav-icon">🏠</span>
           <span class="nav-label">Home</span>
-        </router-link>
+        </div>
         
-        <router-link :to="calendarPath" class="nav-item">
+        <router-link to="/activitycalendar" class="nav-item">
           <span class="nav-icon">📅</span>
           <span class="nav-label">Calendar</span>
         </router-link>
@@ -41,24 +47,59 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
-import { useRoute } from 'vue-router';
-import { authStore } from '@/authStore'; 
+import { ref, computed, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { onAuthStateChanged } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, db } from '@/firebase';
 
 const route = useRoute();
+const router = useRouter();
 
-// Get the role from your store
-const userRole = computed(() => authStore.user?.role || 'beneficiary');
-const isStaff = computed(() => userRole.value === 'staff');
+const userRole = ref(null);
 
-// Dynamic Paths
-const homePath = computed(() => {
-  const routes = {
-    staff: '/staffhome',
-    volunteer: '/volunteerhome',
-    beneficiary: '/userhome'
-  };
-  return routes[userRole.value] || '/';
+// Fetch user role from Firestore
+onMounted(() => {
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      try {
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          userRole.value = userDoc.data().role;
+          console.log('User role from Firebase:', userRole.value);
+        }
+      } catch (error) {
+        console.error('Error fetching user role:', error);
+      }
+    } else {
+      userRole.value = null;
+    }
+  });
+});
+
+// Get home path based on role
+const getHomePath = () => {
+  switch (userRole.value) {
+    case 'beneficiary':
+      return '/userhome';
+    case 'staff':
+      return '/staffhome';
+    case 'volunteer':
+      return '/volunteerhome';
+    default:
+      return '/userhome';
+  }
+};
+
+// Navigate to home
+const goToHome = () => {
+  router.push(getHomePath());
+};
+
+// Check if current route is any home page
+const isHomeActive = computed(() => {
+  const homePaths = ['/userhome', '/caregiverhome', '/staffhome', '/volunteerhome'];
+  return homePaths.includes(route.path);
 });
 
 // FIX: Targeting the StaffCalendar route
@@ -83,8 +124,18 @@ const showBottomNav = computed(() => route.name && !hideOnRoutes.includes(route.
 </script>
 
 <style>
-/* --- THEMED MOBILE FRAME STYLES --- */
-* { box-sizing: border-box; margin: 0; padding: 0; }
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
 
 #app-wrapper {
   display: flex;
@@ -149,12 +200,87 @@ const showBottomNav = computed(() => route.name && !hideOnRoutes.includes(route.
   justify-content: center;
   text-decoration: none;
   color: #94a3b8;
+  transition: all 0.2s;
+  padding: 8px 12px;
+  border-radius: 12px;
+  min-width: 65px;
+  cursor: pointer;
 }
 
-.nav-item.router-link-active {
-  color: #667eea; /* Purple highlight for active link */
+.nav-item:hover {
+  color: #64748b;
+  background: #f8fafc;
 }
 
-.nav-icon { font-size: 24px; margin-bottom: 4px; }
-.nav-label { font-size: 11px; font-weight: 600; }
+.nav-icon {
+  font-size: 22px;
+  transition: transform 0.2s;
+}
+
+.nav-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-align: center;
+}
+
+/* Active state for both router-link and custom home button */
+.nav-item.router-link-active,
+.nav-item.active {
+  color: #667eea;
+}
+
+.nav-item.router-link-active .nav-icon,
+.nav-item.active .nav-icon {
+  transform: scale(1.1);
+}
+
+.nav-item.router-link-active .nav-label,
+.nav-item.active .nav-label {
+  font-weight: 700;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+@media (max-width: 480px) {
+  #app-wrapper {
+    padding: 0;
+    background: white;
+  }
+
+  .mobile-frame {
+    max-width: 100%;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
+
+@media (min-width: 481px) {
+  .mobile-frame {
+    height: 85vh;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-area {
+    scroll-behavior: auto;
+  }
+  
+  .fade-enter-active,
+  .fade-leave-active,
+  .nav-item,
+  .nav-icon {
+    transition: none;
+  }
+}
 </style>

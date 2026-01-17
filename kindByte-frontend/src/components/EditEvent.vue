@@ -19,14 +19,14 @@
         <h3 class="section-title">📋 Event Details</h3>
         <div class="info-card">
           <div class="form-group" :class="{ 'has-error': isAttempted && !eventData.name }">
-            <label class="form-label required">Event Name</label>
+            <label class="form-label required">Title</label>
             <input 
               v-model="eventData.name" 
               type="text" 
               class="form-input"
               placeholder="e.g., Art Workshop 2026" 
             />
-            <span v-if="isAttempted && !eventData.name" class="error-text">Event name is required</span>
+            <span v-if="isAttempted && !eventData.name" class="error-text">Title is required</span>
           </div>
 
           <div class="form-group" :class="{ 'has-error': isAttempted && !eventData.description }">
@@ -41,37 +41,36 @@
           </div>
 
           <div class="form-group" :class="{ 'has-error': isAttempted && !eventData.date }">
-            <label class="form-label required">Date & Time</label>
+            <label class="form-label required">Start Date & Time</label>
             <input 
-              v-model="eventData.date" 
+              v-model="eventData.startTime" 
+              type="datetime-local" 
+              class="form-input"
+            />
+            <span v-if="isAttempted && !eventData.date" class="error-text">Please select a date</span>
+          </div>
+        
+          <div class="form-group" :class="{ 'has-error': isAttempted && !eventData.date }">
+            <label class="form-label required">End Date & Time</label>
+            <input 
+              v-model="eventData.endTime" 
               type="datetime-local" 
               class="form-input"
             />
             <span v-if="isAttempted && !eventData.date" class="error-text">Please select a date</span>
           </div>
 
-          <div class="form-row">
-            <div class="form-group" :class="{ 'has-error': isAttempted && (!eventData.duration || eventData.duration <= 0) }">
-              <label class="form-label required">Duration (hrs)</label>
-              <input 
-                v-model.number="eventData.duration" 
-                type="number" 
-                class="form-input"
-                min="0.5" 
-                step="0.5" 
-              />
-            </div>
-            <div class="form-group" :class="{ 'has-error': isAttempted && !eventData.maxCapacity }">
-              <label class="form-label required">Capacity</label>
-              <input 
-                v-model.number="eventData.maxCapacity" 
-                type="number" 
-                class="form-input"
-                min="1" 
-                placeholder="50" 
-              />
-            </div>
+          <div class="form-group" :class="{ 'has-error': isAttempted && !eventData.maxCapacity }">
+            <label class="form-label required">Capacity</label>
+            <input 
+              v-model.number="eventData.maxCapacity" 
+              type="number" 
+              class="form-input"
+              min="0" 
+              placeholder="50" 
+            />
           </div>
+          
 
           <div class="form-group" :class="{ 'has-error': isAttempted && !eventData.location }">
             <label class="form-label required">Location</label>
@@ -93,15 +92,22 @@
             <span v-if="isAttempted && !eventData.category" class="error-text">Please select a category</span>
           </div>
 
+                    <div class="form-group">
+            <label class="form-label required">Payment Needed</label>
+            <select v-model="eventData.paymentNeeded" class="form-input form-select">
+              <option :value="null" disabled>Select Option</option>
+              <option :value="true">Yes</option>
+              <option :value="false">No</option>
+            </select>
+          </div>
+
           <div class="form-group">
-            <label class="form-label">Event Image URL</label>
-            <input 
-              v-model="eventData.imageUrl" 
-              type="url" 
-              class="form-input"
-              placeholder="https://example.com/image.jpg" 
-            />
-            <span class="hint">Optional - Leave empty for default</span>
+            <label class="form-label required">Wheelchair Accessible</label>
+            <select v-model="eventData.wheelchairAccessible" class="form-input form-select">
+              <option :value="null" disabled>Select Option</option>
+              <option :value="true">Yes</option>
+              <option :value="false">No</option>
+            </select>
           </div>
         </div>
       </div>
@@ -120,7 +126,7 @@
             v-for="(question, index) in questions" 
             :key="question.id || index" 
             class="question-card"
-            :class="{ 'has-error': isAttempted && !question.text }"
+            :class="{ 'has-error': isAttempted && !question.description }"
           >
             <div class="question-header">
               <span class="question-number">Q{{ index + 1 }}</span>
@@ -131,12 +137,12 @@
 
             <div class="form-group">
               <input 
-                v-model="question.text" 
+                v-model="question.description" 
                 type="text" 
                 class="form-input"
                 placeholder="Enter your question..." 
               />
-              <span v-if="isAttempted && !question.text" class="error-text">Question text is required</span>
+              <span v-if="isAttempted && !question.description" class="error-text">Question text is required</span>
             </div>
 
             <div class="form-row">
@@ -152,7 +158,7 @@
               </div>
               <div class="form-group checkbox-group">
                 <label class="checkbox-label">
-                  <input v-model="question.required" type="checkbox" />
+                  <input v-model="question.isCompulsory" type="checkbox" />
                   <span>Required</span>
                 </label>
               </div>
@@ -252,7 +258,7 @@
                 <ul>
                   <li v-for="(q, i) in questions" :key="i">
                     {{ q.text || 'Untitled question' }}
-                    <span v-if="q.required" class="required-badge">Required</span>
+                    <span v-if="q.isCompulsory" class="required-badge">Required</span>
                   </li>
                 </ul>
               </div>
@@ -267,168 +273,171 @@
 <script>
 import { ref, reactive, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import { db } from '@/firebase';
+import { doc, getDoc, updateDoc, deleteDoc, writeBatch, collection, Timestamp } from 'firebase/firestore';
 
 export default {
   name: 'EditEvent',
   setup() {
-    const router = useRouter();
     const route = useRoute();
+    const router = useRouter();
     const eventId = route.params.id;
 
+    // --- State ---
     const loading = ref(true);
-    const isAttempted = ref(false);
     const submitting = ref(false);
+    const isAttempted = ref(false);
     const showPreview = ref(false);
-    const categories = ['Arts & Crafts', 'Sports', 'Music', 'Education', 'Social', 'Wellness', 'Technology', 'Other'];
-
-    const eventData = reactive({
+    
+    const categories = ['Outings', 'MTC Office', 'Swimming Complex', 'Nature Walks', 'Gym and Dance', 'Reading'];
+    
+    const eventData = ref({
       name: '',
       description: '',
-      date: '',
-      duration: 2,
+      startTime: '',
+      endTime: '',
+      maxCapacity: 0,
       location: '',
-      maxCapacity: null,
       category: '',
-      imageUrl: ''
+      wheelchairAccessible: null,
+      paymentNeeded: null
     });
 
     const questions = ref([]);
-    let questionIdCounter = 0;
 
-    // Fetch existing event data
+    // --- Validation ---
+    const isFormValid = computed(() => {
+      return eventData.value.name && 
+             eventData.value.description && 
+             eventData.value.startTime && 
+             eventData.value.endTime && 
+             eventData.value.maxCapacity && 
+             eventData.value.location && 
+             eventData.wheelchairAccessible &&
+             eventData.paymentNeeded &&
+             questions.value.every(q =>q.description);
+    });
+
+    // --- Fetch Data ---
     onMounted(async () => {
       try {
-        // Simulate API fetch - replace with actual Firebase call
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
-        // Mock data - replace with actual fetched data
-        const fetchedEvent = {
-          name: 'Art & Craft Workshop',
-          description: 'Join us for a fun-filled art and craft session where participants will learn various creative techniques.',
-          date: '2026-02-15T10:00',
-          duration: 2,
-          location: 'MTC Central',
-          maxCapacity: 30,
-          category: 'Arts & Crafts',
-          imageUrl: ''
-        };
+        const eventRef = doc(db, 'events', eventId);
+        const eventSnap = await getDoc(eventRef);
 
-        const fetchedQuestions = [
-          { id: 1, text: 'Do you have any allergies?', type: 'text', required: true, options: [] },
-          { id: 2, text: 'T-shirt size?', type: 'mcq', required: true, options: ['S', 'M', 'L', 'XL'] }
-        ];
+        if (eventSnap.exists()) {
+          const data = eventSnap.data();
+          
+          // Map Firebase data to form (Converting Timestamps to Local ISO for datetime-local input)
+          eventData.value = {
+            ...data,
+            name: data.title,
+            maxCapacity: data.maxCount,
+            startTime: data.startTime?.toDate().toISOString().slice(0, 16),
+            endTime: data.endTime?.toDate().toISOString().slice(0, 16),
+            category: data.type
+          };
 
-        Object.assign(eventData, fetchedEvent);
-        questions.value = fetchedQuestions;
-        questionIdCounter = fetchedQuestions.length;
-      } catch (error) {
-        console.error('Error fetching event:', error);
-        alert('Failed to load event details');
+          // Fetch Questions
+          if (data.questionID && data.questionID.length > 0) {
+            const qPromises = data.questionID.map(id => getDoc(doc(db, 'questions', id)));
+            const qSnaps = await Promise.all(qPromises);
+            questions.value = qSnaps.map(snap => ({
+              id: snap.id,
+              ...snap.data()
+            }));
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching event:", err);
       } finally {
         loading.value = false;
       }
     });
 
-    const isFormValid = computed(() => {
-      const basicInfoValid = eventData.name && 
-                             eventData.description && 
-                             eventData.date && 
-                             eventData.location && 
-                             eventData.maxCapacity && 
-                             eventData.category;
-      
-      const questionsValid = questions.value.every(q => q.text.trim() !== '');
-      
-      return basicInfoValid && questionsValid;
-    });
-
-    const addQuestion = () => {
-      questions.value.push({
-        id: ++questionIdCounter,
-        text: '',
-        type: 'text',
-        required: false,
-        options: []
-      });
-    };
-
-    const deleteQuestion = (index) => {
-      questions.value.splice(index, 1);
-    };
-
-    const updateQuestionType = (index) => {
-      const q = questions.value[index];
-      if (['mcq', 'checkbox', 'dropdown'].includes(q.type)) {
-        if (!q.options || q.options.length < 2) {
-          q.options = ['Option 1', 'Option 2'];
-        }
-      } else {
-        q.options = [];
-      }
-    };
-
-    const addOption = (idx) => {
-      questions.value[idx].options.push(`Option ${questions.value[idx].options.length + 1}`);
-    };
-
-    const removeOption = (qIdx, oIdx) => {
-      questions.value[qIdx].options.splice(oIdx, 1);
-    };
-
-    const formatPreviewDate = (str) => {
-      if (!str) return 'Date TBD';
-      return new Date(str).toLocaleString('en-US', {
-        weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-      });
-    };
-
-    const previewEvent = () => {
-      showPreview.value = true;
-    };
-
-    const closePreview = () => { 
-      showPreview.value = false; 
-    };
-
-    const goBack = () => {
-      if (confirm('Discard changes?')) router.go(-1);
-    };
-
-    const confirmDelete = () => {
-      if (confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
-        // Add Firebase delete logic here
-        console.log('Deleting event:', eventId);
-        alert('Event deleted successfully');
-        router.push('/staffhome');
-      }
-    };
-
+    // --- Actions ---
     const handleUpdate = async () => {
       isAttempted.value = true;
-
-      if (!isFormValid.value) {
-        return;
-      }
+      if (!isFormValid.value) return;
 
       submitting.value = true;
+      const batch = writeBatch(db);
+
       try {
-        // Simulate API update - replace with actual Firebase call
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        console.log('Event Updated:', { id: eventId, ...eventData, questions: questions.value });
-        alert('Event updated successfully!');
-        router.push('/staffhome');
+        // 1. Prepare Question IDs
+        const questionIds = questions.value.map(q => q.id || doc(collection(db, 'questions')).id);
+
+        // 2. Update/Create Question Documents in batch
+        questions.value.forEach((q, index) => {
+          const qRef = doc(db, 'questions', questionIds[index]);
+          batch.set(qRef, {
+            description: q.description,
+            type: q.type,
+            isCompulsory: q.isCompulsory,
+            options: ['mcq', 'checkbox', 'dropdown'].includes(q.type) ? q.options : null
+          });
+        });
+
+        // 3. Update Event Document
+        const eventRef = doc(db, 'events', eventId);
+        batch.update(eventRef, {
+          title: eventData.value.name,
+          description: eventData.value.description,
+          startTime: Timestamp.fromDate(new Date(eventData.value.startTime)),
+          endTime: Timestamp.fromDate(new Date(eventData.value.endTime)),
+          maxCount: eventData.value.maxCapacity,
+          location: eventData.value.location,
+          type: eventData.value.category,
+          questionID: questionIds,
+          wheelchairAccessible: eventData.value.wheelchairAccessible,
+          paymentNeeded: eventData.value.paymentNeeded
+        });
+
+        await batch.commit();
+        alert("Event updated successfully!");
+        router.push(`/event/${eventId}`);
       } catch (err) {
-        alert('Error updating event.');
+        console.error("Update failed:", err);
+        alert("Error updating event.");
       } finally {
         submitting.value = false;
       }
     };
 
+    const confirmDelete = async () => {
+      if (confirm("Are you sure? This cannot be undone.")) {
+        try {
+          await deleteDoc(doc(db, 'events', eventId));
+          router.push('/events');
+        } catch (err) {
+          alert("Delete failed.");
+        }
+      }
+    };
+
+    // --- Question Helpers ---
+    const addQuestion = () => {
+      questions.value.push({
+        description: '',
+        type: 'text',
+        isCompulsory: false,
+        options: ['Option 1', 'Option 2']
+      });
+    };
+
+    const deleteQuestion = (index) => questions.value.splice(index, 1);
+    
+    const addOption = (qIndex) => questions.value[qIndex].options.push(`Option ${questions.value[qIndex].options.length + 1}`);
+    
+    const removeOption = (qIndex, optIndex) => questions.value[qIndex].options.splice(optIndex, 1);
+
+    const goBack = () => router.go(-1);
+    const previewEvent = () => showPreview.value = true;
+    const closePreview = () => showPreview.value = false;
+
     return {
-      eventData, questions, loading, submitting, showPreview, isAttempted, isFormValid,
-      categories, addQuestion, deleteQuestion, updateQuestionType, 
-      addOption, removeOption, formatPreviewDate, previewEvent, 
-      closePreview, handleUpdate, goBack, confirmDelete
+      eventData, questions, loading, submitting, isAttempted, isFormValid,
+      categories, showPreview, handleUpdate, confirmDelete, addQuestion,
+      deleteQuestion, addOption, removeOption, goBack, previewEvent, closePreview
     };
   }
 };

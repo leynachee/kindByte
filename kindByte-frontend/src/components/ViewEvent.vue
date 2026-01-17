@@ -15,16 +15,6 @@
 
     <!-- Event Content -->
     <div v-else-if="event" class="event-container">
-      <!-- Event Image -->
-      <div class="event-image-container">
-        <img 
-          :src="event.imageUrl || '/placeholder-event.jpg'" 
-          :alt="event.name"
-          class="event-image"
-        />
-        <div v-if="isFull" class="full-badge">FULL</div>
-      </div>
-
       <!-- Event Details -->
       <div class="event-content">
         <h1 class="event-name">{{ event.name }}</h1>
@@ -82,14 +72,21 @@
           <p class="description-text">{{ event.description }}</p>
         </div>
 
-        <!-- Additional Info -->
-        <div v-if="event.partner || event.category" class="additional-info">
-          <div v-if="event.partner" class="info-item">
-            <strong>Partner:</strong> {{ event.partner }}
-          </div>
-          <div v-if="event.remark" class="info-item">
-            <strong>Remarks:</strong> {{ event.remark }}
-          </div>
+        <!-- Features -->
+        <div class="event-features">
+          <span v-if="event.wheelchairAccessible" class="badge accessible">
+            ♿ Wheelchair Accessible
+          </span>
+          <span v-if="event.paymentNeeded" class="badge payment">
+            💰 Payment Required
+          </span>
+          <span class="badge category">
+            📂 {{ event.type }}
+          </span>
+        </div>
+        <div class="meta-item">
+          <span class="icon">🕐</span>
+          <span>{{ formatTime(event.start) }} - {{ formatTime(event.end) }}</span>
         </div>
 
         <!-- Register Button -->
@@ -97,11 +94,12 @@
           <button 
             @click="goToRegister" 
             class="btn-register"
-            :disabled="isFull || isAlreadyRegistered"
-            :class="{ 'btn-disabled': isFull || isAlreadyRegistered }"
+            :disabled="isFull || isAlreadyRegistered || isConflict"
+            :class="{ 'btn-disabled': isFull || isAlreadyRegistered || isConflict }"
           >
             <span v-if="isAlreadyRegistered">✓ Already Registered</span>
             <span v-else-if="isFull">Event Full</span>
+            <span v-else-if="isConflict">Schedule Conflict</span>
             <span v-else>Register Now</span>
           </button>
           <button @click="$router.go(-1)" class="btn-secondary">
@@ -116,8 +114,8 @@
 <script>
 import { ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-// Import your Firebase functions here
-// import { getEventById, getUserEvents, checkIfRegistered } from '@/services/firebase';
+import { db } from '@/firebase';
+import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 
 export default {
   name: 'ViewEvent',
@@ -131,6 +129,7 @@ export default {
     const loading = ref(true);
     const error = ref(null);
     const isAlreadyRegistered = ref(false);
+    const isConflict = computed(() => clashes.value.length > 0);
 
     // Get event ID from route params
     const eventId = route.params.id;
@@ -175,34 +174,42 @@ export default {
     };
 
     // Check for schedule clashes
-    const checkClashes = async (eventDate) => {
+    const checkClashes = async (newStart, newEnd) => {
+      if (!newStart || !newEnd) return;
+
       try {
-        // Fetch user's registered events
-        // const userEvents = await getUserEvents(currentUserId);
+        const userId = "user123"; 
+        const registrationsRef = collection(db, 'users', userId, 'registrations');
+        const regSnap = await getDocs(registrationsRef);
         
-        // Mock data for demonstration
-        const userEvents = [
-          {
-            id: 'event789',
-            name: 'Tech Workshop',
-            date: '2026-02-15T14:00:00'
+        const conflicts = [];
+
+        for (const regDoc of regSnap.docs) {
+          // Fetch the details of events the user is already attending
+          const eventRef = doc(db, 'events', regDoc.id);
+          const eventSnap = await getDoc(eventRef);
+
+          if (eventSnap.exists()) {
+            const existingEvent = eventSnap.data();
+            const existStart = existingEvent.startTime.toDate().getTime();
+            const existEnd = existingEvent.endTime.toDate().getTime();
+            
+            const newStartMs = newStart.getTime();
+            const newEndMs = newEnd.getTime();
+
+            // Standard Overlap Formula
+            if (newStartMs < existEnd && newEndMs > existStart) {
+              conflicts.push({
+                id: regDoc.id,
+                name: existingEvent.title,
+                date: existingEvent.startTime.toDate()
+              });
+            }
           }
-        ];
-
-        const eventTime = new Date(eventDate);
-        const eventEndTime = new Date(eventTime.getTime() + 2 * 60 * 60 * 1000); // Assume 2hr duration
-
-        const conflicts = userEvents.filter(userEvent => {
-          const userEventTime = new Date(userEvent.date);
-          const userEventEnd = new Date(userEventTime.getTime() + 2 * 60 * 60 * 1000);
-
-          // Check if times overlap
-          return (eventTime < userEventEnd && eventEndTime > userEventTime);
-        });
-
+        }
         clashes.value = conflicts;
       } catch (err) {
-        console.error('Error checking clashes:', err);
+        console.error("Clash Check Error:", err);
       }
     };
 
@@ -210,41 +217,44 @@ export default {
     const loadEvent = async () => {
       try {
         loading.value = true;
-        
-        // Replace this with actual Firebase call
-        // const eventData = await getEventById(eventId);
-        // isAlreadyRegistered.value = await checkIfRegistered(currentUserId, eventId);
-        
-        // Mock data for demonstration
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate loading
-        
-        event.value = {
-          id: eventId,
-          name: 'MYG Family Day 2026',
-          location: 'MYG Punggol, Singapore',
-          date: '2026-02-15T14:00:00',
-          maxCapacity: 50,
-          currentCapacity: 42,
-          imageUrl: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800',
-          description: 'Join us for an indoor zumba session with student volunteers.',
-          partner: 'Singapore Management University (SMU)',
-          remark: 'There may be loud noises.'
-        };
+        error.value = null;
 
-        // Check for clashes
-        await checkClashes(event.value.date);
-        
-        loading.value = false;
+        const eventId = route.params.id; 
+        const docRef = doc(db, "events", eventId);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+
+          event.value = {
+            id: docSnap.id,
+            ...data,
+            name: data.title,
+            maxCapacity: data.maxCount,
+            // Map startTime to 'date' for your template icons
+            date: data.startTime?.toDate(), 
+            // Keep these for the clash logic
+            start: data.startTime?.toDate(),
+            end: data.endTime?.toDate()
+          };
+
+          // Check for clashes using the actual start and end times
+          await checkClashes(event.value.start, event.value.end);
+
+        } else {
+          error.value = "Event not found.";
+        }
       } catch (err) {
-        console.error('Error loading event:', err);
-        error.value = 'Failed to load event details. Please try again.';
+        console.error("Error:", err);
+        error.value = "Failed to load event.";
+      } finally {
         loading.value = false;
       }
     };
 
     // Navigate to register page
     const goToRegister = () => {
-      if (!isFull.value && !isAlreadyRegistered.value) {
+      if (!isFull.value && !isAlreadyRegistered.value && !isConflict.value) {
         router.push({
           name: 'RegisterEvent',
           params: { id: eventId },
@@ -276,6 +286,35 @@ export default {
 </script>
 
 <style scoped>
+.event-features {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 15px 0;
+}
+
+.badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.accessible {
+  background-color: #e0f2fe;
+  color: #0369a1;
+}
+
+.payment {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.category {
+  background-color: #f3f4f6;
+  color: #374151;
+  text-transform: capitalize;
+}
 /* Main Container - Matching the soft gradient background of the calendar */
 .view-event {
   min-height: 100vh;
