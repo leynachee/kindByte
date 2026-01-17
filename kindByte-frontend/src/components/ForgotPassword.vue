@@ -33,14 +33,18 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
+import { auth } from '@/firebase'
+import { sendPasswordResetEmail } from 'firebase/auth'
 
 const router = useRouter()
 const email = ref('')
 const successMessage = ref('') // New ref for the message
 const errors = reactive({ email: '' })
 
-function handleForgotPassword() {
+// handleForgotPassword will send actual email
+async function handleForgotPassword() {
   errors.email = ''
+  successMessage.value = ''
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   if (!emailRegex.test(email.value)) {
@@ -48,45 +52,27 @@ function handleForgotPassword() {
     return
   }
 
-  // 1. Set the success message
-  successMessage.value = 'Reset link sent! Redirecting...'
+  try {
+    await sendPasswordResetEmail(auth, email.value)
 
-  // 2. Wait 2 seconds so the user can see the message, then redirect
-  setTimeout(() => {
-    successMessage.value = ''
-    router.push({ name: 'Login' })
-  }, 2000)
+    successMessage.value = 'Reset link sent! Check your inbox (and spam).'
+    setTimeout(() => {
+      router.push({ name: 'Login' })
+    }, 2000)
+
+  } catch (error) {
+    console.log("RESET ERROR CODE:", error.code)
+    console.log("RESET ERROR MSG:", error.message)
+
+    if (error.code === 'auth/user-not-found') {
+      errors.email = 'No account found with this email.'
+    } else if (error.code === 'auth/invalid-email') {
+      errors.email = 'Invalid email address.'
+    } else {
+      errors.email = 'Failed to send reset link. Please try again.'
+    }
+  }
 }
-
-// can use the code below if the email is an actual email:
-// async function handleForgotPassword() {
-//   errors.email = ''
-//   successMessage.value = ''
-
-//   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-//   if (!emailRegex.test(email.value)) {
-//     errors.email = 'Please enter a valid email'
-//     return
-//   }
-
-//   try {
-//     await sendPasswordResetEmail(auth, email.value)
-
-//     successMessage.value = 'Reset link sent! Check your email.'
-//     setTimeout(() => {
-//       router.push({ name: 'Login' })
-//     }, 2000)
-
-//   } catch (error) {
-//     if (error.code === 'auth/user-not-found') {
-//       errors.email = 'No account found with this email.'
-//     } else if (error.code === 'auth/invalid-email') {
-//       errors.email = 'Invalid email address.'
-//     } else {
-//       errors.email = 'Failed to send reset link. Please try again.'
-//     }
-//   }
-// }
 </script>
 
 <style scoped>
