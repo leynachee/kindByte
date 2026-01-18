@@ -1,6 +1,6 @@
-# kindByte
+# MindsBlown by kindByte
 
-Where technology meets social good, kindByte is designed for Movement for the Intellectually Disabled for Singapore (MINDS) to help the organisation streamline registration and enrolment processes.
+Where technology meets social good, MindsBlown by kindByte is designed for Movement for the Intellectually Disabled for Singapore (MINDS) to help the organisation streamline registration and enrolment processes.
 
 Built By: Tan Jun Ze Johnathan, Wong Xuan Yu, Chee Wei Suen Leyna & Lee How Xi
 
@@ -48,7 +48,7 @@ Database:
 
 ## Try It Out
 
-[kindByte by kindByte](insert_web_link_here)
+[MindsBlown by kindByte](insert_web_link_here)
 
 ## Demostration
 

@@ -1,110 +1,55 @@
-# Project Setup Guide
+# MindsBlown by kindByte
 
-This guide will help you **clone the repository**, **create your own branch**, and **run the Vue project locally**.
+Where technology meets social good, MindsBlown by kindByte is designed for Movement for the Intellectually Disabled for Singapore (MINDS) to help the organisation streamline registration and enrolment processes.
 
----
+Built By: Tan Jun Ze Johnathan, Wong Xuan Yu, Chee Wei Suen Leyna & Lee How Xi
 
-## 1. Prerequisites
+## Features
 
-Make sure you have the following installed:
+### Participants (i.e. Beneficiaries, Caregivers)
 
-- [Git](https://git-scm.com/)
-- [Node.js](https://nodejs.org/) (v16 or later recommended)
-- [npm](https://www.npmjs.com/) or [Yarn](https://yarnpkg.com/)
+- View all events available and registered in an organized fashion (calendar or list layout)
+- Register for events
+- Cancel the registration for events
 
----
+### Volunteers
 
-## 2. Clone the Repository
+- View all events available and registered in an organized fashion (calendar or list layout)
+- Register for events
+- Cancel the registration for events
 
-Open your terminal and run:
+### Staff
 
-```bash
-# Replace <repo-url> with the URL of this repository
-git clone <repo-url>
-```
+- View all events available in an organized fashion (calendar or list layout)
+- Create new events
+- Manage existing exists, such as editing event information
+- Generate and export attendance reports
 
-## 3. Navigate into the project folder:
+## Tech Stack
 
-```bash
-cd kindByte
-```
+Frontend:
+* Traditional technologies such as HTML, CSS and Javascript, via Vue are deployed.
+* A focus on user experience, convenience, and accessibility
+Backend:
+* Firebase Auth handles the security and user registration processes.
+* Interaction via requests to and responses from Firebase Firestore, such as GET and POST API, to handle user, event and registration data.
+Database:
+* Firebase Firestore stores user, event and registration data, in a document-based (JSON-like) manner.
 
-## 4. Create a New Branch
+## Accomplishments
 
-Before you start working, create a new branch for your changes:
+1. Swift Delivery: We were able to meet the project timelines and schedules. This relieves additional downstream delays in addressing client's needs.
+2. Team Synergy and Consistency: Effective teamwork ensured a unified and seamless product experience.
 
-```bash
-git checkout -b <your-branch-name>
-```
+## Key Takeaways
 
-Check your current branch:
+1. Right technology for the right users, and more is not always good. One of our users is beneficiaries, who are Persons With Intellectual Disabilities (PWIDs), with a range of independence, therefore the design and user journey have to consider their experience as well.
+2. Client research is vital for requirement analysis, in this case. Diving into their current Standard Operating Procedures (SOP) tools like Google Form will allow vendors (us) to deliver a targeted solution to meet their needs.
 
-```bash
-git branch
-```
+## Try It Out
 
-## 5. Install Dependencies
+[MindsBlown by kindByte](insert_web_link_here)
 
-Navigate to Frontend or Backend project folder:
+## Demostration
 
-```bash
-cd kindByte-frontend
-```
-or
-```bash
-cd kindByte-backend
-```
-
-Install all required packages:
-
-```bash
-npm install
-npm run format
-```
-
-## 6. Start the Development Server
-
-Run the project locally:
-
-```bash
-npm run dev
-```
-
-You should see a message in the terminal with a local development URL, e.g.:
-
-```bash
-http://localhost:5173
-```
-
-## 6. Workflow Summary
-
-Clone the repository
-
-Navigate into the folder
-
-Create and switch to a new branch
-
-Install dependencies
-
-Start the development server
-
-## 7. Notes
-
-Always work on your own branch to avoid conflicts.
-
-Commit and push your changes regularly:
-
-```bash
-git add .
-git commit -m "Describe your changes"
-git push origin <your-branch-name>
-```
-
-## 8. Pull the latest updates from the main branch before creating a pull request:
-
-```bash
-git checkout main
-git pull origin main
-git checkout <your-branch-name>
-git merge main
-```
+[Pitch](insert_slides_link_here)
