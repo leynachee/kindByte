@@ -13,7 +13,7 @@
           <div class="form-group" :class="{ 'has-error': isAttempted && !eventData.name }">
             <label class="form-label required">Title</label>
             <input v-model="eventData.name" type="text" class="form-input" placeholder="e.g., Art Workshop 2026" />
-            <span v-if="isAttempted && !eventData.name" class="error-text">TItle is required</span>
+            <span v-if="isAttempted && !eventData.name" class="error-text">Title is required</span>
           </div>
 
           <div class="form-group" :class="{ 'has-error': isAttempted && !eventData.description }">
@@ -22,19 +22,22 @@
             <span v-if="isAttempted && !eventData.description" class="error-text">Description is required</span>
           </div>
 
-          <div class="form-group" :class="{ 'has-error': isAttempted && !eventData.date }">
+          <div class="form-group" :class="{ 'has-error': isAttempted && !eventData.startTime }">
             <label class="form-label required">Start Date & Time</label>
             <input v-model="eventData.startTime" type="datetime-local" class="form-input" />
+            <span v-if="isAttempted && !eventData.startTime" class="error-text">Start date & time is required</span>
           </div>
 
-          <div class="form-group" :class="{ 'has-error': isAttempted && !eventData.date }">
+          <div class="form-group" :class="{ 'has-error': isAttempted && !eventData.endTime }">
             <label class="form-label required">End Date & Time</label>
             <input v-model="eventData.endTime" type="datetime-local" class="form-input" />
+            <span v-if="isAttempted && !eventData.endTime" class="error-text">End date & time is required</span>
           </div>
 
-          <div class="form-group">
+          <div class="form-group" :class="{ 'has-error': isAttempted && !eventData.maxCapacity }">
               <label class="form-label required">Capacity</label>
-              <input v-model.number="eventData.maxCapacity" type="number" class="form-input" min="0" placeholder="50" />
+              <input v-model.number="eventData.maxCapacity" type="number" class="form-input" min="1" placeholder="50" />
+              <span v-if="isAttempted && !eventData.maxCapacity" class="error-text">Capacity is required</span>
           </div>
 
           <div class="form-group" :class="{ 'has-error': isAttempted && !eventData.location }">
@@ -43,30 +46,33 @@
             <span v-if="isAttempted && !eventData.location" class="error-text">Location is required</span>
           </div>
 
-          <div class="form-group">
+          <div class="form-group" :class="{ 'has-error': isAttempted && !eventData.category }">
             <label class="form-label required">Category</label>
             <select v-model="eventData.category" class="form-input form-select">
               <option value="" disabled>Select Category</option>
               <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
             </select>
+            <span v-if="isAttempted && !eventData.category" class="error-text">Category is required</span>
           </div>
 
-          <div class="form-group">
+          <div class="form-group" :class="{ 'has-error': isAttempted && eventData.paymentNeeded === null }">
             <label class="form-label required">Payment Needed</label>
             <select v-model="eventData.paymentNeeded" class="form-input form-select">
               <option :value="null" disabled>Select Option</option>
               <option :value="true">Yes</option>
               <option :value="false">No</option>
             </select>
+            <span v-if="isAttempted && eventData.paymentNeeded === null" class="error-text">Please select an option</span>
           </div>
 
-          <div class="form-group">
+          <div class="form-group" :class="{ 'has-error': isAttempted && eventData.wheelchairAccessible === null }">
             <label class="form-label required">Wheelchair Accessible</label>
             <select v-model="eventData.wheelchairAccessible" class="form-input form-select">
               <option :value="null" disabled>Select Option</option>
               <option :value="true">Yes</option>
               <option :value="false">No</option>
             </select>
+            <span v-if="isAttempted && eventData.wheelchairAccessible === null" class="error-text">Please select an option</span>
           </div>
         </div>
       </div>
@@ -78,7 +84,7 @@
         </div>
 
         <div v-else class="questions-list">
-          <div v-for="(question, index) in questions" :key="question.id" class="question-card">
+          <div v-for="(question, index) in questions" :key="index" class="question-card">
             <div class="question-header">
               <span class="question-number">Q{{ index + 1 }}</span>
               <button type="button" @click="deleteQuestion(index)" class="btn-delete">Remove</button>
@@ -136,7 +142,102 @@
       <button type="button" @click="goBack" class="btn-cancel">Cancel</button>
     </form>
 
-    </div>
+    <!-- Preview Modal -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="showPreview" class="modal-overlay" @click.self="showPreview = false">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h2>Event Preview</h2>
+              <button type="button" @click="showPreview = false" class="btn-close">✕</button>
+            </div>
+            <div class="modal-body">
+              <!-- Event Card Preview -->
+              <div class="preview-card">
+                <div class="preview-category-badge">{{ eventData.category || 'Category' }}</div>
+                <h3 class="preview-title">{{ eventData.name || 'Event Title' }}</h3>
+                
+                <div class="preview-info-row">
+                  <span class="preview-icon">📅</span>
+                  <span>{{ formatPreviewDate(eventData.startTime) }}</span>
+                </div>
+                
+                <div class="preview-info-row">
+                  <span class="preview-icon">🕐</span>
+                  <span>{{ formatPreviewTime(eventData.startTime) }} - {{ formatPreviewTime(eventData.endTime) }}</span>
+                </div>
+                
+                <div class="preview-info-row">
+                  <span class="preview-icon">📍</span>
+                  <span>{{ eventData.location || 'Location' }}</span>
+                </div>
+                
+                <div class="preview-info-row">
+                  <span class="preview-icon">👥</span>
+                  <span>{{ eventData.maxCapacity || 0 }} spots available</span>
+                </div>
+
+                <div class="preview-tags">
+                  <span v-if="eventData.wheelchairAccessible" class="preview-tag accessible">
+                    ♿ Wheelchair Accessible
+                  </span>
+                  <span v-if="eventData.paymentNeeded" class="preview-tag payment">
+                    💳 Payment Required
+                  </span>
+                  <span v-if="eventData.paymentNeeded === false" class="preview-tag free">
+                    🆓 Free Event
+                  </span>
+                </div>
+              </div>
+
+              <!-- Description Section -->
+              <div class="preview-section">
+                <h4>📝 Description</h4>
+                <p class="preview-description-text">{{ eventData.description || 'No description provided.' }}</p>
+              </div>
+
+              <!-- Questions Section -->
+              <div v-if="questions.length > 0" class="preview-section">
+                <h4>❓ Registration Questions ({{ questions.length }})</h4>
+                <div class="preview-questions-list">
+                  <div v-for="(question, index) in questions" :key="index" class="preview-question-item">
+                    <div class="preview-question-header">
+                      <span class="preview-question-number">Q{{ index + 1 }}</span>
+                      <span v-if="question.isCompulsory" class="required-badge">Required</span>
+                    </div>
+                    <p class="preview-question-text">{{ question.description || 'Question text...' }}</p>
+                    <span class="preview-question-type">{{ getQuestionTypeLabel(question.type) }}</span>
+                    
+                    <!-- Show options for choice questions -->
+                    <div v-if="['mcq', 'checkbox', 'dropdown'].includes(question.type) && question.options.length > 0" class="preview-options">
+                      <div v-for="(option, optIdx) in question.options" :key="optIdx" class="preview-option">
+                        <span v-if="question.type === 'mcq'" class="option-indicator radio"></span>
+                        <span v-else-if="question.type === 'checkbox'" class="option-indicator checkbox"></span>
+                        <span v-else class="option-indicator dropdown-item">{{ optIdx + 1 }}.</span>
+                        {{ option }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- No Questions Message -->
+              <div v-else class="preview-section">
+                <h4>❓ Registration Questions</h4>
+                <p class="preview-no-questions">No custom questions added.</p>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" @click="showPreview = false" class="btn-modal-secondary">Close</button>
+              <button type="button" @click="showPreview = false; handleSubmit()" class="btn-modal-primary" :disabled="submitting">
+                {{ submitting ? 'Saving...' : '✓ Create Event' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+  </div>
 </template>
 
 <script setup>
@@ -167,7 +268,6 @@ const eventData = reactive({
 });
 
 const questions = ref([]);
-let questionIdCounter = 0;
 
 const isFormValid = computed(() => {
   return (
@@ -178,11 +278,46 @@ const isFormValid = computed(() => {
     eventData.location && 
     eventData.maxCapacity && 
     eventData.category &&
-    eventData.wheelchairAccessible &&
-    eventData.paymentNeeded &&
+    eventData.wheelchairAccessible !== null &&
+    eventData.paymentNeeded !== null &&
     questions.value.every(q => q.description.trim() !== '')
   );
 });
+
+// Format date for preview
+const formatPreviewDate = (dateString) => {
+  if (!dateString) return 'Date not set';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-SG', { 
+    weekday: 'long',
+    day: 'numeric', 
+    month: 'long', 
+    year: 'numeric' 
+  });
+};
+
+// Format time for preview
+const formatPreviewTime = (dateString) => {
+  if (!dateString) return '--:--';
+  const date = new Date(dateString);
+  return date.toLocaleTimeString('en-SG', { 
+    hour: '2-digit', 
+    minute: '2-digit',
+    hour12: true 
+  });
+};
+
+// Get readable question type label
+const getQuestionTypeLabel = (type) => {
+  const labels = {
+    text: '📝 Short Text',
+    textarea: '📄 Long Text',
+    mcq: '⭕ Single Choice',
+    checkbox: '☑️ Multiple Choice',
+    dropdown: '📋 Dropdown'
+  };
+  return labels[type] || type;
+};
 
 const addQuestion = () => {
   questions.value.push({
@@ -198,14 +333,39 @@ const addOption = (index) => questions.value[index].options.push(`Option ${quest
 const removeOption = (qIdx, oIdx) => questions.value[qIdx].options.splice(oIdx, 1);
 const updateQuestionType = (index) => {
   const q = questions.value[index];
-  if (['mcq', 'checkbox'].includes(q.type) && q.options.length < 2) {
+  if (['mcq', 'checkbox', 'dropdown'].includes(q.type) && q.options.length < 2) {
     q.options = ['Option 1', 'Option 2'];
   }
 };
+
+const previewEvent = () => {
+  showPreview.value = true;
+};
+
 const handleSubmit = async () => {
   isAttempted.value = true;
+  errorMessage.value = '';
+  
   if (!isFormValid.value) {
-    errorMessage.value = "Please fill in all required fields.";
+    // Build a more specific error message
+    const missingFields = [];
+    if (!eventData.name) missingFields.push('Title');
+    if (!eventData.description) missingFields.push('Description');
+    if (!eventData.startTime) missingFields.push('Start Date & Time');
+    if (!eventData.endTime) missingFields.push('End Date & Time');
+    if (!eventData.maxCapacity) missingFields.push('Capacity');
+    if (!eventData.location) missingFields.push('Location');
+    if (!eventData.category) missingFields.push('Category');
+    if (eventData.paymentNeeded === null) missingFields.push('Payment Needed');
+    if (eventData.wheelchairAccessible === null) missingFields.push('Wheelchair Accessible');
+    
+    const emptyQuestions = questions.value.filter(q => !q.description.trim());
+    if (emptyQuestions.length > 0) {
+      missingFields.push(`${emptyQuestions.length} question(s) without text`);
+    }
+    
+    errorMessage.value = `Please fill in: ${missingFields.join(', ')}`;
+    showPreview.value = false;
     return;
   }
 
@@ -236,10 +396,13 @@ const handleSubmit = async () => {
       type: eventData.category,
       startTime: Timestamp.fromDate(new Date(eventData.startTime)),
       endTime: Timestamp.fromDate(new Date(eventData.endTime)),
-      questionID: questionIDs, // Store the array of IDs
+      wheelchairAccessible: eventData.wheelchairAccessible,
+      paymentNeeded: eventData.paymentNeeded,
+      questionID: questionIDs,
     });
 
     await batch.commit();
+    showPreview.value = false;
     router.push({ name: 'StaffHome' }); 
     
   } catch (err) {
@@ -371,13 +534,6 @@ const goBack = () => { if (confirm('Discard changes?')) router.go(-1); };
   padding-right: 40px;
 }
 
-.hint {
-  font-size: 12px;
-  color: #94a3b8;
-  margin-top: 4px;
-  display: block;
-}
-
 /* Validation */
 .has-error .form-input {
   border-color: #fca5a5;
@@ -437,10 +593,6 @@ const goBack = () => { if (confirm('Discard changes?')) router.go(-1); };
   margin-bottom: 12px;
 }
 
-.question-card.has-error {
-  border-color: #fca5a5;
-}
-
 .question-header {
   display: flex;
   justify-content: space-between;
@@ -464,12 +616,6 @@ const goBack = () => { if (confirm('Discard changes?')) router.go(-1); };
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-}
-
-.checkbox-group {
-  display: flex;
-  align-items: flex-end;
-  padding-bottom: 4px;
 }
 
 .checkbox-label {
@@ -627,119 +773,256 @@ const goBack = () => { if (confirm('Discard changes?')) router.go(-1); };
   justify-content: center;
   align-items: center;
   z-index: 1000;
-  padding: 20px;
+  padding: 16px;
   backdrop-filter: blur(4px);
 }
 
 .modal-content {
   background: white;
   width: 100%;
-  max-width: 400px;
-  border-radius: 16px;
-  max-height: 80vh;
+  max-width: 420px;
+  border-radius: 20px;
+  max-height: 90vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .modal-header {
-  padding: 16px 20px;
+  padding: 18px 20px;
   border-bottom: 1px solid #e2e8f0;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: white;
 }
 
 .modal-header h2 {
   margin: 0;
   font-size: 18px;
   font-weight: 700;
-  color: #0f172a;
 }
 
 .btn-close {
-  background: #f1f5f9;
+  background: rgba(255, 255, 255, 0.2);
   border: none;
   width: 32px;
   height: 32px;
   border-radius: 8px;
   font-size: 16px;
   cursor: pointer;
-  color: #64748b;
+  color: white;
+  transition: all 0.2s;
+}
+
+.btn-close:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 
 .modal-body {
   padding: 20px;
   overflow-y: auto;
+  flex: 1;
 }
 
-.preview-image {
-  width: 100%;
-  height: 150px;
-  border-radius: 12px;
-  overflow: hidden;
-  margin-bottom: 16px;
+.modal-footer {
+  padding: 16px 20px;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  gap: 12px;
+  background: #f8fafc;
 }
 
-.preview-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.btn-modal-secondary {
+  flex: 1;
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  background: white;
+  color: #64748b;
+  border: 2px solid #e2e8f0;
+  transition: all 0.2s;
+}
+
+.btn-modal-secondary:hover {
+  background: #f1f5f9;
+}
+
+.btn-modal-primary {
+  flex: 1;
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: white;
+  border: none;
+  transition: all 0.2s;
+}
+
+.btn-modal-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.btn-modal-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Preview Card */
+.preview-card {
+  background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+  border-radius: 16px;
+  padding: 20px;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 20px;
+}
+
+.preview-category-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
 }
 
 .preview-title {
   font-size: 20px;
-  font-weight: 700;
+  font-weight: 800;
   color: #0f172a;
-  margin: 0 0 12px 0;
+  margin: 0 0 16px 0;
+  line-height: 1.3;
 }
 
-.preview-meta {
+.preview-info-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  font-size: 14px;
+  color: #475569;
+}
+
+.preview-icon {
+  font-size: 16px;
+  width: 24px;
+  text-align: center;
+}
+
+.preview-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 16px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px dashed #cbd5e1;
 }
 
-.meta-item {
-  background: #f1f5f9;
-  color: #475569;
+.preview-tag {
   padding: 6px 12px;
   border-radius: 20px;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
 }
 
-.preview-description h4,
-.preview-questions h4 {
+.preview-tag.accessible {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.preview-tag.payment {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.preview-tag.free {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+/* Preview Sections */
+.preview-section {
+  margin-bottom: 20px;
+}
+
+.preview-section:last-child {
+  margin-bottom: 0;
+}
+
+.preview-section h4 {
   font-size: 14px;
   font-weight: 700;
   color: #0f172a;
-  margin: 0 0 8px 0;
+  margin: 0 0 10px 0;
 }
 
-.preview-description p {
+.preview-description-text {
   font-size: 14px;
   color: #64748b;
-  line-height: 1.5;
+  line-height: 1.6;
+  margin: 0;
+  background: white;
+  padding: 14px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+.preview-no-questions {
+  font-size: 14px;
+  color: #94a3b8;
+  font-style: italic;
   margin: 0;
 }
 
-.preview-questions {
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid #e2e8f0;
+/* Preview Questions List */
+.preview-questions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-.preview-questions ul {
-  margin: 0;
-  padding-left: 20px;
+.preview-question-item {
+  background: white;
+  border-radius: 12px;
+  padding: 14px;
+  border: 1px solid #e2e8f0;
 }
 
-.preview-questions li {
-  font-size: 13px;
-  color: #475569;
-  margin-bottom: 6px;
+.preview-question-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.preview-question-number {
+  font-size: 11px;
+  font-weight: 700;
+  color: #6366f1;
+  background: #eef2ff;
+  padding: 3px 8px;
+  border-radius: 4px;
 }
 
 .required-badge {
@@ -747,9 +1030,60 @@ const goBack = () => { if (confirm('Discard changes?')) router.go(-1); };
   color: #dc2626;
   font-size: 10px;
   font-weight: 600;
-  padding: 2px 6px;
+  padding: 3px 8px;
   border-radius: 4px;
-  margin-left: 6px;
+}
+
+.preview-question-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0 0 8px 0;
+}
+
+.preview-question-type {
+  font-size: 12px;
+  color: #64748b;
+}
+
+/* Preview Options */
+.preview-options {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed #e2e8f0;
+}
+
+.preview-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  font-size: 13px;
+  color: #475569;
+}
+
+.option-indicator {
+  flex-shrink: 0;
+}
+
+.option-indicator.radio {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #cbd5e1;
+  border-radius: 50%;
+}
+
+.option-indicator.checkbox {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #cbd5e1;
+  border-radius: 4px;
+}
+
+.option-indicator.dropdown-item {
+  color: #94a3b8;
+  font-weight: 600;
+  font-size: 12px;
 }
 
 /* Transitions */

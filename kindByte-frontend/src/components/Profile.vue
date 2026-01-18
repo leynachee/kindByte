@@ -18,14 +18,19 @@
 
         <div class="profile-avatar">
           <div class="avatar" :style="{ background: avatarColor }">
-            {{ userInitials }}
+            <template v-if="user.name">
+              {{ userInitials }}
+            </template>
+            <svg v-else class="default-avatar-icon" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+            </svg>
           </div>
           <button v-if="isEditing" class="change-photo-btn">
             📷 Change
           </button>
         </div>
 
-        <h2 class="profile-name">{{ user.name }}</h2>
+        <h2 class="profile-name">{{ user.name || 'User' }}</h2>
         <div class="membership-badge" :class="user.role">
           {{ getRoleIcon(user.role) }} {{ formatRole(user.role) }}
         </div>
@@ -237,7 +242,7 @@ const userStats = ref({
 
 // Computed
 const userInitials = computed(() => {
-  if (!user.value.name) return '?';
+  if (!user.value.name) return '';
   const names = user.value.name.split(' ');
   if (names.length >= 2) {
     return names[0][0] + names[names.length - 1][0];
@@ -247,7 +252,8 @@ const userInitials = computed(() => {
 
 const avatarColor = computed(() => {
   const colors = ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#3b82f6'];
-  const index = user.value.name ? user.value.name.charCodeAt(0) % colors.length : 0;
+  if (!user.value.name) return '#94a3b8'; // Gray color for default avatar
+  const index = user.value.name.charCodeAt(0) % colors.length;
   return colors[index];
 });
 
@@ -512,6 +518,12 @@ const confirmLogout = async () => {
   font-weight: 700;
   color: white;
   border: 3px solid rgba(255, 255, 255, 0.3);
+}
+
+.default-avatar-icon {
+  width: 44px;
+  height: 44px;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .change-photo-btn {

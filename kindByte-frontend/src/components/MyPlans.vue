@@ -2,6 +2,7 @@
   <div class="page-container">
     <!-- Loading State -->
     <div v-if="loading" class="loading-state">
+      <div class="spinner"></div>
       <p>Loading your plans...</p>
     </div>
 
@@ -11,7 +12,6 @@
           <h1>My Plans</h1>
           <p>Manage your registered activities</p>
         </div>
-        
       </header>
 
       <!-- Tabs -->
@@ -45,7 +45,7 @@
           <div class="empty-icon">📅</div>
           <h3>No upcoming plans</h3>
           <p>Browse activities and register for events</p>
-          <router-link to="/activitycalendar" class="browse-btn">
+          <router-link to="/calendar" class="browse-btn">
             Browse Activities
           </router-link>
         </div>
@@ -84,8 +84,11 @@
                   </div>
                 </div>
 
-                <!-- Additional Info -->
+                <!-- Role Badge -->
                 <div class="plan-tags">
+                  <span class="tag role" :class="plan.userRole">
+                    {{ plan.userRole === 'volunteer' ? '🤝 Volunteer' : '👤 Participant' }}
+                  </span>
                   <span v-if="plan.wheelchairAccessible" class="tag accessible">♿ Accessible</span>
                   <span v-if="plan.paymentNeeded" class="tag paid">💰 Payment required</span>
                 </div>
@@ -94,21 +97,13 @@
 
             <!-- Actions -->
             <div class="plan-actions">
-              <button class="action-btn view" @click="viewDetails(plan)">
-                <span class="btn-icon">👁️</span>
-                View Details
-              </button>
               <button class="action-btn calendar" @click="addToCalendar(plan)">
                 <span class="btn-icon">📅</span>
                 Add to Calendar
               </button>
-              <button class="action-btn contact" @click="contactStaff(plan)">
-                <span class="btn-icon">💬</span>
-                Contact Staff
-              </button>
-              <button class="action-btn cancel" @click="cancelPlan(plan)">
+              <button class="action-btn cancel" @click="openCancelModal(plan)">
                 <span class="btn-icon">❌</span>
-                Cancel
+                Cancel Registration
               </button>
             </div>
           </div>
@@ -130,8 +125,8 @@
             class="plan-card past"
           >
             <div class="card-header">
-              <span :class="['status-badge', plan.attended ? 'attended' : 'missed']">
-                {{ plan.attended ? '✅ ATTENDED' : '❌ MISSED' }}
+              <span class="status-badge attended">
+                ✅ COMPLETED
               </span>
               <span class="date-text">{{ formatDate(plan.startTime) }}</span>
             </div>
@@ -144,13 +139,10 @@
                 <span class="plan-type" :style="{ color: getEventColor(plan.type) }">{{ plan.type }}</span>
                 <h3 class="plan-title">{{ plan.title }}</h3>
                 <p class="plan-location">📍 {{ plan.location }}</p>
+                <span class="tag role" :class="plan.userRole">
+                  {{ plan.userRole === 'volunteer' ? '🤝 Volunteer' : '👤 Participant' }}
+                </span>
               </div>
-            </div>
-
-            <div v-if="plan.attended" class="feedback-section">
-              <button class="feedback-btn" @click="giveFeedback(plan)">
-                ⭐ Rate this activity
-              </button>
             </div>
           </div>
         </div>
@@ -182,20 +174,54 @@
               <div class="plan-details">
                 <span class="plan-type" :style="{ color: getEventColor(plan.type) }">{{ plan.type }}</span>
                 <h3 class="plan-title">{{ plan.title }}</h3>
-                <p class="cancellation-reason">Reason: {{ plan.cancellationReason || 'Not specified' }}</p>
+                <p class="cancellation-reason">Cancelled on {{ formatDate(plan.cancelledAt) }}</p>
               </div>
             </div>
           </div>
         </div>
       </div>
     </template>
+
+    <!-- Cancel Confirmation Modal -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="showCancelModal" class="modal-overlay" @click.self="closeCancelModal">
+          <div class="modal-content">
+            <div class="modal-icon">🚫</div>
+            <h3>Cancel Registration?</h3>
+            <p>Are you sure you want to cancel your registration for:</p>
+            <div class="modal-event-info">
+              <strong>{{ selectedPlan?.title }}</strong>
+              <span>{{ formatDate(selectedPlan?.startTime) }}</span>
+            </div>
+            <p class="modal-warning">This action cannot be undone.</p>
+            <div class="modal-actions">
+              <button class="modal-btn secondary" @click="closeCancelModal" :disabled="cancelling">
+                Keep Registration
+              </button>
+              <button class="modal-btn danger" @click="confirmCancelPlan" :disabled="cancelling">
+                {{ cancelling ? 'Cancelling...' : 'Yes, Cancel' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- Toast Notification -->
+    <Transition name="toast">
+      <div v-if="toast.show" :class="['toast', toast.type]">
+        <span class="toast-icon">{{ toast.type === 'success' ? '✅' : '❌' }}</span>
+        {{ toast.message }}
+      </div>
+    </Transition>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { collection, doc, getDoc, getDocs, updateDoc, query, where } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, updateDoc, arrayRemove } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '@/firebase';
 
@@ -203,14 +229,34 @@ const router = useRouter();
 const activeTab = ref('upcoming');
 const loading = ref(true);
 const plans = ref([]);
+const cancelledPlansData = ref([]);
 const currentUserId = ref(null);
+const showCancelModal = ref(false);
+const selectedPlan = ref(null);
+const cancelling = ref(false);
 
-// Event type colors and icons
+// Toast notification
+const toast = ref({
+  show: false,
+  message: '',
+  type: 'success'
+});
+
+const showToast = (message, type = 'success') => {
+  toast.value = { show: true, message, type };
+  setTimeout(() => {
+    toast.value.show = false;
+  }, 3000);
+};
+
+// Event type colors and icons - matching your categories
 const eventStyles = {
-  'Gym & Dance': { color: '#db2777', icon: '💃' },
-  'Nature': { color: '#10b981', icon: '🌳' },
-  'Outing': { color: '#f59e0b', icon: '🏛️' },
-  'Arts & Crafts': { color: '#8b5cf6', icon: '🎨' },
+  'Outings': { color: '#f59e0b', icon: '🏛️' },
+  'MTC Office': { color: '#6366f1', icon: '🏢' },
+  'Swimming Complex': { color: '#0ea5e9', icon: '🏊' },
+  'Nature Walks': { color: '#10b981', icon: '🌳' },
+  'Gym and Dance': { color: '#db2777', icon: '💃' },
+  'Reading': { color: '#8b5cf6', icon: '📚' },
   'default': { color: '#6366f1', icon: '📅' }
 };
 
@@ -228,7 +274,7 @@ const fetchUserPlans = async (userId) => {
     loading.value = true;
     console.log('Fetching plans for user:', userId);
 
-    // Get all events where user is in attendees array
+    // Get all events
     const eventsRef = collection(db, 'events');
     const querySnapshot = await getDocs(eventsRef);
     
@@ -237,36 +283,51 @@ const fetchUserPlans = async (userId) => {
     for (const eventDoc of querySnapshot.docs) {
       const eventData = eventDoc.data();
       
-      // Check if user is in attendees
-      if (eventData.attendees && eventData.attendees.includes(userId)) {
-        // Get user's registration status from user's subcollection
-        let status = 'confirmed';
-        let attended = false;
-        
-        try {
-          const userEventRef = doc(db, 'users', userId, eventDoc.id, 'status');
-          const userEventDoc = await getDoc(userEventRef);
-          if (userEventDoc.exists()) {
-            status = userEventDoc.data().status || 'confirmed';
-            attended = userEventDoc.data().attended || false;
-          }
-        } catch (e) {
-          console.log('No user status found for event:', eventDoc.id);
-        }
+      // Check if user is in participantsID array
+      const isParticipant = eventData.participantsID?.includes(userId);
+      
+      // Check if user is in volunteersID array
+      const isVolunteer = eventData.volunteersID?.includes(userId);
+      
+      // Also check attendees array for backward compatibility
+      const isAttendee = eventData.attendees?.includes(userId);
 
+      if (isParticipant || isVolunteer || isAttendee) {
         userPlans.push({
           id: eventDoc.id,
-          ...eventData,
-          startTime: eventData.startTime?.toDate?.() || new Date(eventData.startTime),
-          endTime: eventData.endTime?.toDate?.() || new Date(eventData.endTime),
-          status,
-          attended
+          title: eventData.title || eventData.name || 'Untitled Event',
+          description: eventData.description || '',
+          location: eventData.location || 'TBA',
+          type: eventData.type || 'General',
+          maxCount: eventData.maxCount || 0,
+          startTime: eventData.startTime?.toDate?.() || null,
+          endTime: eventData.endTime?.toDate?.() || null,
+          wheelchairAccessible: eventData.wheelchairAccessible || false,
+          paymentNeeded: eventData.paymentNeeded || false,
+          userRole: isVolunteer ? 'volunteer' : 'participant',
+          status: 'confirmed'
         });
       }
     }
 
+    // Also fetch cancelled registrations from user's subcollection (if exists)
+    try {
+      const userCancelledRef = collection(db, 'users', userId, 'cancelledEvents');
+      const cancelledSnapshot = await getDocs(userCancelledRef);
+      
+      cancelledPlansData.value = cancelledSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        cancelledAt: doc.data().cancelledAt?.toDate?.() || new Date()
+      }));
+    } catch (e) {
+      console.log('No cancelled events collection found');
+      cancelledPlansData.value = [];
+    }
+
     plans.value = userPlans;
-    console.log('User plans:', userPlans);
+    console.log('User plans found:', userPlans.length);
+    console.log('Plans:', userPlans);
   } catch (error) {
     console.error('Error fetching user plans:', error);
   } finally {
@@ -290,35 +351,19 @@ onMounted(() => {
 const upcomingPlans = computed(() => {
   const now = new Date();
   return plans.value
-    .filter(p => p.startTime >= now && p.status !== 'cancelled')
+    .filter(p => p.startTime && p.startTime >= now)
     .sort((a, b) => a.startTime - b.startTime);
 });
 
 const pastPlans = computed(() => {
   const now = new Date();
   return plans.value
-    .filter(p => p.startTime < now && p.status !== 'cancelled')
+    .filter(p => p.startTime && p.startTime < now)
     .sort((a, b) => b.startTime - a.startTime);
 });
 
 const cancelledPlans = computed(() => {
-  return plans.value
-    .filter(p => p.status === 'cancelled')
-    .sort((a, b) => b.startTime - a.startTime);
-});
-
-const weeklyCount = computed(() => {
-  const now = new Date();
-  const startOfWeek = new Date(now);
-  startOfWeek.setDate(now.getDate() - now.getDay());
-  startOfWeek.setHours(0, 0, 0, 0);
-  
-  const endOfWeek = new Date(startOfWeek);
-  endOfWeek.setDate(startOfWeek.getDate() + 7);
-
-  return upcomingPlans.value.filter(p => 
-    p.startTime >= startOfWeek && p.startTime < endOfWeek
-  ).length;
+  return cancelledPlansData.value.sort((a, b) => b.cancelledAt - a.cancelledAt);
 });
 
 // Methods
@@ -340,13 +385,14 @@ const getDaysUntil = (date) => {
   if (diffDays === 0) return 'Today';
   if (diffDays === 1) return 'Tomorrow';
   if (diffDays < 7) return `In ${diffDays} days`;
-  return `In ${Math.ceil(diffDays / 7)} weeks`;
+  if (diffDays < 30) return `In ${Math.ceil(diffDays / 7)} weeks`;
+  return `In ${Math.ceil(diffDays / 30)} months`;
 };
 
 const formatDate = (date) => {
   if (!date) return '';
-  return date.toLocaleDateString('en-US', { 
-    weekday: 'long',
+  return date.toLocaleDateString('en-SG', { 
+    weekday: 'short',
     month: 'short', 
     day: 'numeric',
     year: 'numeric'
@@ -355,7 +401,7 @@ const formatDate = (date) => {
 
 const formatTime = (date) => {
   if (!date) return '';
-  return date.toLocaleTimeString('en-US', { 
+  return date.toLocaleTimeString('en-SG', { 
     hour: 'numeric', 
     minute: '2-digit',
     hour12: true 
@@ -363,10 +409,15 @@ const formatTime = (date) => {
 };
 
 const viewDetails = (plan) => {
-  router.push({ name: 'ViewEvent', params: { id: plan.id } });
+  router.push(`/event/${plan.id}`);
 };
 
 const addToCalendar = (plan) => {
+  if (!plan.startTime || !plan.endTime) {
+    alert('Event dates not available');
+    return;
+  }
+  
   // Create calendar event URL (Google Calendar)
   const startDate = plan.startTime.toISOString().replace(/-|:|\.\d+/g, '');
   const endDate = plan.endTime.toISOString().replace(/-|:|\.\d+/g, '');
@@ -374,60 +425,91 @@ const addToCalendar = (plan) => {
   window.open(url, '_blank');
 };
 
-const contactStaff = (plan) => {
-  alert('Opening staff contact form...');
+const openCancelModal = (plan) => {
+  selectedPlan.value = plan;
+  showCancelModal.value = true;
 };
 
-const cancelPlan = async (plan) => {
-  if (confirm(`Are you sure you want to cancel "${plan.title}"?`)) {
-    try {
-      // Update user's event status
-      const userEventRef = doc(db, 'users', currentUserId.value, plan.id, 'status');
-      await updateDoc(userEventRef, {
-        status: 'cancelled',
-        cancellationReason: 'Cancelled by user'
+const closeCancelModal = () => {
+  showCancelModal.value = false;
+  selectedPlan.value = null;
+};
+
+const confirmCancelPlan = async () => {
+  if (!selectedPlan.value) return;
+  
+  cancelling.value = true;
+  const plan = selectedPlan.value;
+
+  try {
+    const eventRef = doc(db, 'events', plan.id);
+    
+    // Remove user from the appropriate array based on their role
+    if (plan.userRole === 'volunteer') {
+      await updateDoc(eventRef, {
+        volunteersID: arrayRemove(currentUserId.value)
       });
-
-      // Remove user from event attendees
-      const eventRef = doc(db, 'events', plan.id);
-      const eventDoc = await getDoc(eventRef);
-      if (eventDoc.exists()) {
-        const attendees = eventDoc.data().attendees || [];
-        const updatedAttendees = attendees.filter(id => id !== currentUserId.value);
-        await updateDoc(eventRef, { attendees: updatedAttendees });
-      }
-
-      // Update local state
-      plan.status = 'cancelled';
-      plan.cancellationReason = 'Cancelled by user';
-      
-      alert('Registration cancelled successfully');
-    } catch (error) {
-      console.error('Error cancelling plan:', error);
-      alert('Failed to cancel registration. Please try again.');
+    } else {
+      await updateDoc(eventRef, {
+        participantsID: arrayRemove(currentUserId.value)
+      });
     }
-  }
-};
 
-const giveFeedback = (plan) => {
-  alert('Opening feedback form...');
+    // Also remove from attendees if present
+    await updateDoc(eventRef, {
+      attendees: arrayRemove(currentUserId.value)
+    });
+
+    // Remove from local state
+    plans.value = plans.value.filter(p => p.id !== plan.id);
+    
+    // Add to cancelled list for display
+    cancelledPlansData.value.push({
+      ...plan,
+      cancelledAt: new Date()
+    });
+    
+    closeCancelModal();
+    showToast('Registration cancelled successfully', 'success');
+  } catch (error) {
+    console.error('Error cancelling registration:', error);
+    showToast('Failed to cancel registration. Please try again.', 'error');
+  } finally {
+    cancelling.value = false;
+  }
 };
 </script>
 
 <style scoped>
 .page-container {
   padding: 16px;
+  padding-bottom: 100px;
   background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-  min-height: 100%;
+  min-height: 100vh;
 }
 
 .loading-state {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   min-height: 200px;
   color: #64748b;
   font-size: 14px;
+  gap: 12px;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 /* Header */
@@ -450,30 +532,6 @@ const giveFeedback = (plan) => {
   font-size: 13px;
   color: #64748b;
   margin: 0;
-}
-
-.quota-info {
-  background: white;
-  padding: 12px 16px;
-  border-radius: 10px;
-  border: 1px solid #e2e8f0;
-  text-align: center;
-  min-width: 80px;
-}
-
-.quota-label {
-  display: block;
-  font-size: 10px;
-  color: #64748b;
-  font-weight: 600;
-  margin-bottom: 4px;
-}
-
-.quota-value {
-  display: block;
-  font-size: 20px;
-  color: #10b981;
-  font-weight: 800;
 }
 
 /* Tabs */
@@ -700,7 +758,7 @@ const giveFeedback = (plan) => {
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
-  margin-top: 4px;
+  margin-top: 6px;
 }
 
 .tag {
@@ -708,6 +766,21 @@ const giveFeedback = (plan) => {
   border-radius: 6px;
   font-size: 10px;
   font-weight: 600;
+}
+
+.tag.role {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.tag.role.volunteer {
+  background: #ddd6fe;
+  color: #7c3aed;
+}
+
+.tag.role.participant {
+  background: #dbeafe;
+  color: #2563eb;
 }
 
 .tag.accessible {
@@ -722,8 +795,8 @@ const giveFeedback = (plan) => {
 
 /* Plan Actions */
 .plan-actions {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  display: flex;
+  flex-direction: column;
   gap: 8px;
 }
 
@@ -731,7 +804,7 @@ const giveFeedback = (plan) => {
   padding: 10px 12px;
   border-radius: 8px;
   font-weight: 700;
-  font-size: 11px;
+  font-size: 12px;
   cursor: pointer;
   transition: all 0.2s;
   display: flex;
@@ -752,12 +825,6 @@ const giveFeedback = (plan) => {
   color: white;
 }
 
-.action-btn.contact {
-  background: #f8fafc;
-  color: #1e293b;
-  border: 1px solid #e2e8f0;
-}
-
 .action-btn.cancel {
   background: #fee2e2;
   color: #dc2626;
@@ -768,35 +835,20 @@ const giveFeedback = (plan) => {
   font-size: 14px;
 }
 
-/* Feedback Section */
-.feedback-section {
-  padding-top: 12px;
-  border-top: 1px solid #f1f5f9;
-}
-
-.feedback-btn {
-  width: 100%;
-  padding: 10px;
-  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-weight: 700;
-  font-size: 12px;
-  cursor: pointer;
-}
-
 .cancellation-reason {
   font-size: 12px;
   color: #dc2626;
   font-style: italic;
-  margin: 0;
+  margin: 4px 0 0 0;
 }
 
 /* Empty State */
 .empty-state {
   text-align: center;
   padding: 40px 20px;
+  background: white;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
 }
 
 .empty-icon {
@@ -827,22 +879,193 @@ const giveFeedback = (plan) => {
   font-size: 14px;
 }
 
-/* Responsive */
-@media (max-width: 380px) {
-  .page-container {
-    padding: 12px;
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  backdrop-filter: blur(4px);
+}
+
+.modal-content {
+  background: white;
+  border-radius: 20px;
+  padding: 28px 24px;
+  width: 100%;
+  max-width: 340px;
+  text-align: center;
+  animation: modalIn 0.3s ease;
+}
+
+@keyframes modalIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
   }
-  
-  .page-header {
-    flex-direction: column;
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
   }
-  
-  .quota-info {
-    width: 100%;
+}
+
+.modal-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.modal-content h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 8px 0;
+}
+
+.modal-content p {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0 0 12px 0;
+}
+
+.modal-event-info {
+  background: #f8fafc;
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.modal-event-info strong {
+  display: block;
+  font-size: 15px;
+  color: #0f172a;
+  margin-bottom: 4px;
+}
+
+.modal-event-info span {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.modal-warning {
+  font-size: 12px;
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.modal-btn {
+  flex: 1;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.modal-btn.secondary {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.modal-btn.secondary:hover:not(:disabled) {
+  background: #e2e8f0;
+}
+
+.modal-btn.danger {
+  background: #dc2626;
+  color: white;
+}
+
+.modal-btn.danger:hover:not(:disabled) {
+  background: #b91c1c;
+}
+
+.modal-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  z-index: 1001;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.toast.success {
+  background: #10b981;
+  color: white;
+}
+
+.toast.error {
+  background: #dc2626;
+  color: white;
+}
+
+.toast-icon {
+  font-size: 16px;
+}
+
+/* Transitions */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.toast-enter-active {
+  animation: toastIn 0.3s ease;
+}
+
+.toast-leave-active {
+  animation: toastOut 0.3s ease;
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
   }
-  
-  .plan-actions {
-    grid-template-columns: 1fr;
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+@keyframes toastOut {
+  from {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
   }
 }
 </style>
