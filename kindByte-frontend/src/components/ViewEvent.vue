@@ -45,15 +45,21 @@
               :class="{ 'vacancy-critical': vacancyPercentage > 80 }"
             ></div>
           </div>
-          <p class="vacancy-text">
-            <strong>{{ event.currentCapacity || 0 }}</strong> / {{ event.maxCapacity }} registered
-            <span v-if="!isFull" class="spots-left">
-              ({{ spotsLeft }} spots left)
-            </span>
-            <span v-else class="full-text">
-              (Event is full)
-            </span>
-          </p>
+        <p class="vacancy-text">
+          <strong>{{ totalRegistered }}</strong> / {{ event.maxCount }} registered
+          
+          <span v-if="!isFull" class="spots-left">
+            ({{ spotsLeft }} spots left)
+          </span>
+          <span v-else class="full-text">
+            (Event is full)
+          </span>
+        </p>
+
+        <div class="capacity-breakdown" style="font-size: 0.8rem; color: #666;">
+          {{ event.participantsID?.length || 0 }} Participants | 
+          {{ event.volunteersID?.length || 0 }} Volunteers
+        </div>
         </div>
 
         <!-- Event Clashes -->
@@ -133,24 +139,34 @@ export default {
 
     // Get event ID from route params
     const eventId = route.params.id;
-    
-    // Mock user ID - replace with actual auth user
-    const currentUserId = 'user123';
 
     // Computed properties
+    // 1. Calculate the total number of people currently registered
+    const totalRegistered = computed(() => {
+      if (!event.value) return 0;
+      const pCount = event.value.participantsID?.length || 0;
+      const vCount = event.value.volunteersID?.length || 0;
+      return pCount + vCount;
+    });
+
+    // 2. Check if the event has reached or exceeded maxCount
     const isFull = computed(() => {
       if (!event.value) return false;
-      return event.value.currentCapacity >= event.value.maxCapacity;
+      return totalRegistered.value >= (event.value.maxCount || 0);
     });
 
+    // 3. Calculate spots remaining
     const spotsLeft = computed(() => {
       if (!event.value) return 0;
-      return event.value.maxCapacity - (event.value.currentCapacity || 0);
+      const remaining = (event.value.maxCount || 0) - totalRegistered.value;
+      return remaining > 0 ? remaining : 0;
     });
 
+    // 4. Calculate percentage for a progress bar (optional)
     const vacancyPercentage = computed(() => {
-      if (!event.value) return 0;
-      return ((event.value.currentCapacity || 0) / event.value.maxCapacity) * 100;
+      if (!event.value || !event.value.maxCount) return 0;
+      const percentage = (totalRegistered.value / event.value.maxCount) * 100;
+      return Math.min(percentage, 100); // Caps at 100%
     });
 
     // Format date
@@ -235,7 +251,9 @@ export default {
             date: data.startTime?.toDate(), 
             // Keep these for the clash logic
             start: data.startTime?.toDate(),
-            end: data.endTime?.toDate()
+            end: data.endTime?.toDate(),
+            partcipantsID: data.partcipantsID || [],
+            volunteersID: data.volunteersID || []
           };
 
           // Check for clashes using the actual start and end times
@@ -274,6 +292,7 @@ export default {
       loading,
       error,
       isAlreadyRegistered,
+      totalRegistered,
       isFull,
       spotsLeft,
       vacancyPercentage,

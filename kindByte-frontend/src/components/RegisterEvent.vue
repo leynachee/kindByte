@@ -203,10 +203,14 @@ const submitRegistration = async () => {
     const eventId = route.params.id;
     const userId = currentUserId.value;
 
+    const userDocSnap = await getDoc(doc(db, 'users', userId));
+    const userRole = userDocSnap.exists() ? userDocSnap.data().role : 'participant';
+    const targetField = (userRole === 'volunteer') ? 'volunteersID' : 'participantsID';
+
     // 1. Add user to event's attendees array
     const eventRef = doc(db, 'events', eventId);
     await updateDoc(eventRef, {
-      attendees: arrayUnion(userId)
+      [targetField]: arrayUnion(userId)
     });
 
     // 2. Save user's responses to questions (if any)

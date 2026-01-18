@@ -43,18 +43,21 @@
         <div v-else class="event-list">
           <div v-for="event in events" :key="event.id" class="event-card">
             <div class="event-date">
-              <span class="date-day">{{ getDayName(event.date) }}</span>
-              <span class="date-num">{{ getDayNum(event.date) }}</span>
+              <span class="date-day">{{ getDayName(event.startTime) }}</span>
+              <span class="date-num">{{ getDayNum(event.startTime) }}</span>
             </div>
   
             <div class="event-content">
               <h4 class="event-title">{{ event.name }}</h4>
               <p class="event-meta">📍 {{ event.location }}</p>
               <div class="event-status">
-                <span class="status-badge volunteers">{{ event.category }}</span>
-                <span class="status-badge" :class="event.attendeeCount >= event.maxCapacity ? 'full' : 'warning'">
-                  👥 {{ event.attendeeCount || 0 }}/{{ event.maxCapacity }} Joined
+                <span class="status-badge" :class="event.participantsID.length + event.volunteersID.length >= event.maxCount ? 'full' : 'warning'">
+                  👥 {{ event.participantsID.length + event.volunteersID.length }}/{{ event.maxCount }} Joined
                 </span>
+                
+                <small class="breakdown">
+                  ({{ event.participantsID.length }} Participants, {{ event.volunteersID.length }} Volunteers)
+                </small>
               </div>
             </div>
   
@@ -82,7 +85,18 @@
     try {
       const q = query(collection(db, 'events'), orderBy('createdAt', 'desc'));
       const snap = await getDocs(q);
-      events.value = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      events.value = snap.docs.map(docSnap => {
+        const data = docSnap.data(); // Get the actual data object
+        return { 
+          id: docSnap.id, 
+          ...data,
+          // Access startTime FROM the data object, not the docSnap
+          startTime: data.startTime?.toDate(), 
+          endTime: data.endTime?.toDate(),
+          participantsID: data.participantsID || [],
+          volunteersID: data.volunteersID || [] 
+        };
+      });
     } finally {
       loading.value = false;
     }
@@ -93,8 +107,15 @@
   const activeEventsCount = computed(() => events.value.length);
   
   // Helpers for Date Badge
-  const getDayName = (d) => new Date(d).toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
-  const getDayNum = (d) => new Date(d).getDate();
+  const getDayName = (d) => {
+    if (!d) return '---';
+    return new Date(d).toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
+  };
+
+  const getDayNum = (d) => {
+    if (!d) return '--';
+    return new Date(d).getDate();
+  };
   
   const editEvent = (id) => router.push(`/editevent/${id}`);
   </script>
