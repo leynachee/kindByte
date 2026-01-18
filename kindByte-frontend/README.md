@@ -27,13 +27,15 @@ Built By: Tan Jun Ze Johnathan, Wong Xuan Yu, Chee Wei Suen Leyna & Lee How Xi
 
 ## Tech Stack
 
-Frontend:
+### Frontend:
 * Traditional technologies such as HTML, CSS and Javascript, via Vue are deployed.
 * A focus on user experience, convenience, and accessibility
-Backend:
+  
+### Backend:
 * Firebase Auth handles the security and user registration processes.
 * Interaction via requests to and responses from Firebase Firestore, such as GET and POST API, to handle user, event and registration data.
-Database:
+  
+### Database:
 * Firebase Firestore stores user, event and registration data, in a document-based (JSON-like) manner.
 
 ## Accomplishments
