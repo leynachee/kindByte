@@ -1,44 +1,56 @@
-# kindByte-frontend
+# kindByte
 
-This template should help get you started developing with Vue 3 in Vite.
+Where technology meets social good, kindByte is designed for Movement for the Intellectually Disabled for Singapore (MINDS) to help the organisation streamline registration and enrolment processes.
 
-## Recommended IDE Setup
+Built By: Tan Jun Ze Johnathan, Wong Xuan Yu, Chee Wei Suen Leyna & Lee How Xi
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+## Features
 
-## Recommended Browser Setup
+### Participants (i.e. Beneficiaries, Caregivers)
 
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
+- View all events available and registered in an organized fashion (calendar or list layout)
+- Register for events
+- Cancel the registration for events
 
-## Customize configuration
+### Volunteers
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+- View all events available and registered in an organized fashion (calendar or list layout)
+- Register for events
+- Cancel the registration for events
 
-## Project Setup
+### Staff
 
-```sh
-npm install
-```
+- View all events available in an organized fashion (calendar or list layout)
+- Create new events
+- Manage existing exists, such as editing event information
+- Generate and export attendance reports
 
-### Compile and Hot-Reload for Development
+## Tech Stack
 
-```sh
-npm run dev
-```
+Frontend:
+* Traditional technologies such as HTML, CSS and Javascript, via Vue are deployed.
+* A focus on user experience, convenience, and accessibility
+Backend:
+* Firebase Auth handles the security and user registration processes.
+* Interaction via requests to and responses from Firebase Firestore, such as GET and POST API, to handle user, event and registration data.
+Database:
+* Firebase Firestore stores user, event and registration data, in a document-based (JSON-like) manner.
 
-### Compile and Minify for Production
+## Accomplishments
 
-```sh
-npm run build
-```
+1. Swift Delivery: We were able to meet the project timelines and schedules. This relieves additional downstream delays in addressing client's needs.
+2. Team Synergy and Consistency: Effective teamwork ensured a unified and seamless product experience.
 
-### Lint with [ESLint](https://eslint.org/)
+## Key Takeaways
 
-```sh
-npm run lint
-```
+1. Right technology for the right users, and more is not always good. One of our users is beneficiaries, who are Persons With Intellectual Disabilities (PWIDs), with a range of independence, therefore the design and user journey have to consider their experience as well.
+2. Client research is vital for requirement analysis, in this case. Diving into their current Standard Operating Procedures (SOP) tools like Google Form will allow vendors (us) to deliver a targeted solution to meet their needs.
+
+## Try It Out
+
+[kindByte by kindByte](insert_web_link_here)
+
+## Demostration
+
+[Pitch](insert_slides_link_here)
+
