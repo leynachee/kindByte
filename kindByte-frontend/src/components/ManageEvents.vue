@@ -48,12 +48,12 @@
           </div>
 
           <div class="event-content">
-            <h4 class="event-title">{{ event.name }}</h4>
+            <h4 class="event-title">{{ event.title }}</h4>
             <p class="event-meta">📍 {{ event.location }}</p>
             <div class="event-status">
               <span class="status-badge volunteers">{{ event.type }}</span>
-              <span class="status-badge" :class="event.attendeeCount >= event.maxCapacity ? 'full' : 'warning'">
-                👥 {{ event.attendeeCount || 0 }}/{{ event.maxCapacity }} Joined
+              <span class="status-badge" :class="getTotalJoined(event) >= event.maxCount ? 'full' : 'warning'">
+                👥 {{ getTotalJoined(event) }}/{{ event.maxCount }} Joined
               </span>
             </div>
           </div>
@@ -76,45 +76,6 @@ import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 const router = useRouter();
 const events = ref([]);
 const loading = ref(true);
-
-// Fetch Logic
-onMounted(async () => {
-  try {
-    // Try ordering by startTime instead of createdAt (more reliable)
-    const q = query(collection(db, 'events'), orderBy('startTime', 'desc'));
-    const snap = await getDocs(q);
-
-    events.value = snap.docs.map(docSnap => {
-      const data = docSnap.data();
-      return {
-        id: docSnap.id,
-        // Map all fields from Firebase
-        title: data.title || data.name || 'Untitled Event',
-        description: data.description || '',
-        location: data.location || 'TBA',
-        maxCount: data.maxCount || 0,
-        type: data.type || '',
-        startTime: data.startTime?.toDate?.() || null,
-        endTime: data.endTime?.toDate?.() || null,
-        participantsID: data.participantsID || [],
-        volunteersID: data.volunteersID || [],
-        attendees: data.attendees || [],
-        wheelchairAccessible: data.wheelchairAccessible || false,
-        paymentNeeded: data.paymentNeeded || false,
-        questionID: data.questionID || []
-      };
-    });
-
-    console.log('Fetched events:', events.value); // Debug log
-  } catch (error) {
-    console.error('Error fetching events:', error);
-    const q = query(collection(db, 'events'), orderBy('createdAt', 'desc'));
-    const snap = await getDocs(q);
-    events.value = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-  } finally {
-    loading.value = false;
-  }
-});
 
 // Stats - Fixed to use correct fields
 const totalAttendees = computed(() => {
@@ -155,17 +116,25 @@ const getStatusClass = (event) => {
 const toJsDate = (d) => {
   if (!d) return null;
 
+  // If already a JS Date
+  if (d instanceof Date) return d;
+
   // Firestore Timestamp (has .toDate())
   if (typeof d === 'object' && typeof d.toDate === 'function') {
     return d.toDate();
   }
 
-  // Milliseconds / seconds
-  if (typeof d === 'number') {
-    return d < 1e12 ? new Date(d * 1000) : new Date(d); // seconds vs ms
+  // { seconds, nanoseconds } object
+  if (typeof d === 'object' && typeof d.seconds === 'number') {
+    return new Date(d.seconds * 1000);
   }
 
-  // String
+  // number (ms or seconds)
+  if (typeof d === 'number') {
+    return d < 1e12 ? new Date(d * 1000) : new Date(d);
+  }
+
+  // string
   if (typeof d === 'string') {
     const dt = new Date(d);
     return isNaN(dt.getTime()) ? null : dt;
@@ -181,13 +150,73 @@ const getDayName = (d) => {
 
 const getDayNum = (d) => {
   const dt = toJsDate(d);
-  return dt ? dt.getDate() : '—';
+  return dt ? dt.getDate() : 'TBC';
 };
 
 // const getDayName = (d) => new Date(d).toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
 // const getDayNum = (d) => new Date(d).getDate();
 
 const editEvent = (id) => router.push(`/editevent/${id}`);
+
+// Fetch Logic
+onMounted(async () => {
+  loading.value = true;
+
+  try {
+    // Try ordering by startTime instead of createdAt (more reliable)
+    const q = query(collection(db, 'events'), orderBy('startTime', 'desc'));
+    const snap = await getDocs(q);
+
+    events.value = snap.docs.map(docSnap => {
+      const data = docSnap.data();
+      return {
+        id: docSnap.id,
+        // Map all fields from Firebase
+        title: data.title || data.name || 'Untitled Event',
+        description: data.description || '',
+        location: data.location || 'TBA',
+        maxCount: data.maxCount || 0,
+        type: data.type || '',
+        startTime: toJsDate(data.startTime) || toJsDate(data.createdAt) || null,
+        endTime: toJsDate(data.endTime) || null,
+        participantsID: data.participantsID || [],
+        volunteersID: data.volunteersID || [],
+        attendees: data.attendees || [],
+        wheelchairAccessible: data.wheelchairAccessible || false,
+        paymentNeeded: data.paymentNeeded || false,
+        questionID: data.questionID || []
+      };
+    });
+
+    console.log('Fetched events:', events.value); // Debug log
+
+  } catch (error) {
+    console.error('Error fetching events:', error);
+
+    const q2 = query(collection(db, 'events'), orderBy('createdAt', 'desc'));
+    const snap2 = await getDocs(q2);
+
+    events.value = snap2.docs.map(docSnap => {
+      const data = docSnap.data();
+      return {
+        id: docSnap.id,
+        title: data.title || data.name || 'Untitled Event',
+        description: data.description || '',
+        location: data.location || 'TBA',
+        maxCount: data.maxCount || 0,
+        type: data.type || '',
+        startTime: toJsDate(data.startTime) || toJsDate(data.createdAt) || null,
+        endTime: toJsDate(data.endTime) || null,
+        participantsID: data.participantsID || [],
+        volunteersID: data.volunteersID || [],
+        attendees: data.attendees || [],
+      };
+    });
+    console.log('Fetched events (createdAt order):', events.value);
+  } finally {
+    loading.value = false
+  }
+});
 </script>
 
 <style scoped>
