@@ -39,9 +39,9 @@
           <small class="event-label">YOUR NEXT ACTIVITY</small>
           <span class="event-status">Confirmed</span>
         </div>
-        
+
         <h2 class="event-title">{{ nextEvent.title }}</h2>
-        
+
         <div class="event-details">
           <div class="detail-item">
             <span class="icon">📅</span>
@@ -77,7 +77,7 @@
         <span class="cta-arrow">→</span>
       </router-link>
 
-      
+
     </template>
   </div>
 </template>
@@ -123,17 +123,21 @@ const fetchUserEvents = async (userId) => {
   try {
     const eventsRef = collection(db, 'events');
     const querySnapshot = await getDocs(eventsRef);
-    
+
     const events = [];
     const now = new Date();
 
     for (const eventDoc of querySnapshot.docs) {
       const eventData = eventDoc.data();
-      
+
+      const isRegistered =
+        eventData.participantsID?.includes(userId) ||
+        eventData.volunteersID?.includes(userId);
+
       // Check if user is in attendees
-      if (eventData.attendees && eventData.attendees.includes(userId)) {
+      if (isRegistered) {
         const startTime = eventData.startTime?.toDate?.() || new Date(eventData.startTime);
-        
+
         // Only include future events
         if (startTime >= now) {
           events.push({
@@ -159,36 +163,56 @@ const nextEvent = computed(() => {
   return userEvents.value.length > 0 ? userEvents.value[0] : null;
 });
 
+// const weeklyCount = computed(() => {
+//   const now = new Date();
+//   const startOfWeek = new Date(now);
+//   startOfWeek.setDate(now.getDate() - now.getDay());
+//   startOfWeek.setHours(0, 0, 0, 0);
+
+//   const endOfWeek = new Date(startOfWeek);
+//   endOfWeek.setDate(startOfWeek.getDate() + 7);
+
+//   return userEvents.value.filter(e => 
+//     e.startTime >= startOfWeek && e.startTime < endOfWeek
+//   ).length;
+// });
+
 const weeklyCount = computed(() => {
   const now = new Date();
+
+  // Week starts Monday (common in SG). If you want Sunday, tell me.
   const startOfWeek = new Date(now);
-  startOfWeek.setDate(now.getDate() - now.getDay());
+  const day = startOfWeek.getDay(); // 0=Sun,1=Mon...
+  const diffToMonday = (day + 6) % 7; // Mon -> 0, Sun -> 6
+  startOfWeek.setDate(startOfWeek.getDate() - diffToMonday);
   startOfWeek.setHours(0, 0, 0, 0);
-  
+
   const endOfWeek = new Date(startOfWeek);
   endOfWeek.setDate(startOfWeek.getDate() + 7);
 
-  return userEvents.value.filter(e => 
-    e.startTime >= startOfWeek && e.startTime < endOfWeek
+  return userEvents.value.filter(e =>
+    e.startTime instanceof Date &&
+    e.startTime >= startOfWeek &&
+    e.startTime < endOfWeek
   ).length;
 });
 
 // Methods
 const formatEventDate = (date) => {
   if (!date) return '';
-  
+
   const now = new Date();
   const tomorrow = new Date(now);
   tomorrow.setDate(tomorrow.getDate() + 1);
-  
+
   if (date.toDateString() === now.toDateString()) {
     return 'Today';
   } else if (date.toDateString() === tomorrow.toDateString()) {
     return 'Tomorrow';
   } else {
-    return date.toLocaleDateString('en-US', { 
+    return date.toLocaleDateString('en-US', {
       weekday: 'short',
-      month: 'short', 
+      month: 'short',
       day: 'numeric'
     });
   }
@@ -196,10 +220,10 @@ const formatEventDate = (date) => {
 
 const formatTime = (date) => {
   if (!date) return '';
-  return date.toLocaleTimeString('en-US', { 
-    hour: 'numeric', 
+  return date.toLocaleTimeString('en-US', {
+    hour: 'numeric',
     minute: '2-digit',
-    hour12: true 
+    hour12: true
   });
 };
 
@@ -237,7 +261,9 @@ const viewEventDetails = (event) => {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Welcome Section */

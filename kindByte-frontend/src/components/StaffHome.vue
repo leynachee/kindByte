@@ -80,7 +80,7 @@
               <p class="event-meta">{{ formatTime(event.startTime) }} • {{ event.location }}</p>
               <div class="event-status">
                 <span class="status-badge" :class="getCapacityClass(event)">
-                  {{ getAttendeeCount(event) }}/{{ event.maxCount }} registered
+                  {{ getTotalJoined(event) }}/{{ event.maxCount }} registered
                 </span>
                 <span v-if="getVolunteerCount(event) > 0" class="status-badge volunteers">
                   {{ getVolunteerCount(event) }} volunteer{{ getVolunteerCount(event) > 1 ? 's' : '' }}
@@ -192,6 +192,13 @@ const stats = ref({
 });
 
 const pendingCount = ref(0);
+
+// Helper to get total joined
+const getTotalJoined = (event) => {
+  const participants = event.participantsID?.length || 0;
+  const volunteers = event.volunteersID?.length || 0;
+  return participants + volunteers;
+};
 
 // Fetch data on mount
 onMounted(() => {

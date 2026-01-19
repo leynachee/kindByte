@@ -44,20 +44,20 @@
           <h3>Your Next Shift</h3>
           <router-link to="/my-shifts" class="text-btn">View All →</router-link>
         </div>
-        
+
         <div class="shift-card highlight">
           <div class="shift-date">
             <div class="day">{{ formatDay(nextShift.startTime) }}</div>
             <div class="date">{{ formatDateNum(nextShift.startTime) }}</div>
             <div class="month">{{ formatMonth(nextShift.startTime) }}</div>
           </div>
-          
+
           <div class="shift-content">
             <div class="shift-header">
               <h4 class="shift-title">{{ nextShift.title }}</h4>
               <span class="shift-badge confirmed">Confirmed</span>
             </div>
-            
+
             <div class="shift-details">
               <div class="detail-row">
                 <span class="icon">📍</span>
@@ -96,11 +96,7 @@
         </div>
 
         <div v-if="availableOpportunities.length > 0" class="opportunity-list">
-          <div 
-            v-for="event in availableOpportunities" 
-            :key="event.id"
-            class="opportunity-card"
-          >
+          <div v-for="event in availableOpportunities" :key="event.id" class="opportunity-card">
             <div class="opportunity-header">
               <div class="opportunity-date">
                 <span class="date-day">{{ formatShortDate(event.startTime) }}</span>
@@ -108,12 +104,16 @@
               </div>
               <span v-if="getSpotsLeft(event) <= 2" class="opportunity-tag urgent">Needs Volunteers</span>
             </div>
-            
+
             <h4 class="opportunity-title">{{ event.title }}</h4>
             <p class="opportunity-location">📍 {{ event.location }} • {{ getDuration(event) }}</p>
-            
+
             <div class="opportunity-footer">
               <span class="spots-left">{{ getSpotsLeft(event) }} spots left</span>
+
+              <!-- DEBUG -->
+              <!-- <pre style="font-size:10px">{{ event.attendees }}</pre> -->
+
               <button class="register-btn" @click="registerForShift(event)">Register</button>
             </div>
           </div>
@@ -134,9 +134,9 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { collection, doc, getDoc, getDocs } from 'firebase/firestore';
+import { collection, doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '@/firebase';
 
@@ -171,40 +171,47 @@ const fetchUserData = async (userId) => {
   }
 };
 
+let unsubscribeEvents = null;
+
 const fetchEvents = async (userId) => {
-  try {
-    const eventsRef = collection(db, 'events');
-    const querySnapshot = await getDocs(eventsRef);
-    
+  const eventsRef = collection(db, "events");
+
+  if (unsubscribeEvents) unsubscribeEvents();
+
+  unsubscribeEvents = onSnapshot(eventsRef, (querySnapshot) => {
     const events = [];
     const shifts = [];
 
-    querySnapshot.docs.forEach(eventDoc => {
+    querySnapshot.forEach((eventDoc) => {
       const eventData = eventDoc.data();
       const event = {
         id: eventDoc.id,
         ...eventData,
         startTime: eventData.startTime?.toDate?.() || new Date(eventData.startTime),
-        endTime: eventData.endTime?.toDate?.() || new Date(eventData.endTime)
+        endTime: eventData.endTime?.toDate?.() || new Date(eventData.endTime),
       };
 
       events.push(event);
 
-      // Check if user is registered for this event
-      if (eventData.attendees && eventData.attendees.includes(userId)) {
+      if (
+        eventData.volunteersID?.includes(userId) ||
+        eventData.participantsID?.includes(userId)
+      ) {
         shifts.push(event);
       }
+
     });
 
     allEvents.value = events;
     userShifts.value = shifts;
-    
-    console.log('All events:', events);
-    console.log('User shifts:', shifts);
-  } catch (error) {
-    console.error('Error fetching events:', error);
-  }
+  });
 };
+
+
+onUnmounted(() => {
+  if (unsubscribeEvents) unsubscribeEvents();
+});
+
 
 // Computed
 const upcomingShifts = computed(() => {
@@ -230,7 +237,11 @@ const availableOpportunities = computed(() => {
   return allEvents.value
     .filter(e => {
       const isUpcoming = e.startTime >= now;
-      const isNotRegistered = !e.attendees?.includes(currentUserId.value);
+      const uid = currentUserId.value;
+      const isNotRegistered =
+        !e.volunteersID?.includes(uid) &&
+        !e.participantsID?.includes(uid);
+
       const hasSpots = getSpotsLeft(e) > 0;
       return isUpcoming && isNotRegistered && hasSpots;
     })
@@ -267,9 +278,12 @@ const getLevelIcon = (shifts) => {
 };
 
 const getSpotsLeft = (event) => {
-  const attendeesCount = event.attendees?.length || 0;
-  return Math.max(0, (event.maxCount || 10) - attendeesCount);
+  const v = event.volunteersID?.length ?? 0;
+  const p = event.participantsID?.length ?? 0;
+  const max = Number(event.maxCount ?? 10);
+  return Math.max(0, max - (v + p));
 };
+
 
 const getVolunteersNeeded = (event) => {
   return getSpotsLeft(event);
@@ -299,16 +313,16 @@ const formatMonth = (date) => {
 
 const formatTime = (date) => {
   if (!date) return '';
-  return date.toLocaleTimeString('en-US', { 
-    hour: 'numeric', 
+  return date.toLocaleTimeString('en-US', {
+    hour: 'numeric',
     minute: '2-digit',
-    hour12: true 
+    hour12: true
   });
 };
 
 const formatShortDate = (date) => {
   if (!date) return '';
-  return date.toLocaleDateString('en-US', { 
+  return date.toLocaleDateString('en-US', {
     weekday: 'short',
     day: 'numeric'
   }).toUpperCase();
@@ -358,7 +372,9 @@ const registerForShift = (event) => {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Welcome Section */
@@ -791,16 +807,16 @@ const registerForShift = (event) => {
   .page-container {
     padding: 16px 12px;
   }
-  
+
   .greeting h1 {
     font-size: 20px;
   }
-  
+
   .shift-card {
     flex-direction: column;
     gap: 12px;
   }
-  
+
   .shift-date {
     flex-direction: row;
     justify-content: center;
@@ -808,13 +824,13 @@ const registerForShift = (event) => {
     min-width: unset;
     gap: 8px;
   }
-  
+
   .shift-date .day,
   .shift-date .date,
   .shift-date .month {
     font-size: 14px;
   }
-  
+
   .shift-date .date {
     font-size: 18px;
   }
