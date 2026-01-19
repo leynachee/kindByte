@@ -50,9 +50,9 @@ Built By: Tan Jun Ze Johnathan, Wong Xuan Yu, Chee Wei Suen Leyna & Lee How Xi
 
 ## Try It Out
 
-[MindsBlown by kindByte](insert_web_link_here)
+[MindsBlown by kindByte](https://kindbyte.vercel.app/)
 
 ## Demostration
 
-[Pitch](insert_slides_link_here)
+[Pitch](https://docs.google.com/presentation/d/1kOGjOusHeTb2yQf8fQnC4DNtdyjN2Mvb/edit?usp=drive_link&ouid=108673518613159369369&rtpof=true&sd=true)
 
