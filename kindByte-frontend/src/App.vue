@@ -18,32 +18,8 @@
       </main>
 
       <!-- Bottom Navigation -->
-      <nav class="bottom-nav" v-if="showBottomNav">
-        <!-- Home - use div with click handler instead of router-link -->
-        <div 
-          class="nav-item" 
-          :class="{ active: isHomeActive }"
-          @click="goToHome"
-        >
-          <span class="nav-icon">🏠</span>
-          <span class="nav-label">Home</span>
-        </div>
-        
-        <router-link to="/activitycalendar" class="nav-item">
-          <span class="nav-icon">📅</span>
-          <span class="nav-label">Calendar</span>
-        </router-link>
-        
-        <router-link to="/my-plans" class="nav-item">
-          <span class="nav-icon">📋</span>
-          <span class="nav-label">My Activities</span>
-        </router-link>
-        
-        <router-link to="/profile" class="nav-item">
-          <span class="nav-icon">👤</span>
-          <span class="nav-label">Profile</span>
-        </router-link>
-      </nav>
+      <BottomNav v-if="showBottomNav" :userRole="normalizedRole" />
+      
     </div>
   </div>
 </template>
@@ -54,6 +30,9 @@ import { useRoute, useRouter } from 'vue-router';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/firebase';
+
+import BottomNav from '@/components/BottomNav.vue';
+
 
 const route = useRoute();
 const router = useRouter();
@@ -97,6 +76,10 @@ const getHomePath = () => {
 const goToHome = () => {
   router.push(getHomePath());
 };
+
+const normalizedRole = computed(() =>
+  String(userRole.value || '').trim().toLowerCase()
+);
 
 // Check if current route is any home page
 const isHomeActive = computed(() => {

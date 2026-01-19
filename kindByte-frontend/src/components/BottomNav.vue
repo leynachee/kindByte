@@ -1,19 +1,14 @@
 <template>
-  <div class="mobile-wrapper">
-    <div class="content-view">
-      <router-view />
-    </div>
-    
     <nav class="bottom-nav">
       <div class="nav-item" :class="{ active: isHomeActive }" @click="goToHome">
         <span class="icon">🏠</span>
         <span class="label">Home</span>
       </div>
       
-      <router-link to="/activitycalendar" class="nav-item">
+      <div @click="goToCalendar" class="nav-item" :class="{ active: isCalendarActive }">
         <span class="icon">📅</span>
         <span class="label">Calendar</span>
-      </router-link>
+      </div>
       
       <router-link to="/my-plans" class="nav-item">
         <span class="icon">📋</span>
@@ -25,7 +20,6 @@
         <span class="label">Profile</span>
       </router-link>
     </nav>
-  </div>
 </template>
 
 <script setup>
@@ -37,7 +31,11 @@ import { auth, db } from '@/firebase'; // Use your existing firebase exports
 
 const router = useRouter();
 const route = useRoute();
-const userRole = ref(null);
+// const userRole = ref(null);
+
+const props = defineProps({
+  userRole: { type: String, default: '' } // expect normalized already
+});
 
 onMounted(() => {
   onAuthStateChanged(auth, async (user) => {
@@ -46,8 +44,8 @@ onMounted(() => {
         // Adjust 'users' to your collection name and 'role' to your field name
         const userDoc = await getDoc(doc(db, 'users', user.uid));
         if (userDoc.exists()) {
-          userRole.value = userDoc.data().role;
-          console.log('User role:', userRole.value); // Debug log
+          props.userRole = String(userDoc.data().role || '').trim().toLowerCase();
+          console.log('User role:', props.userRole); // Debug log
         }
       } catch (error) {
         console.error('Error fetching user role:', error);
@@ -57,20 +55,21 @@ onMounted(() => {
 });
 
 const goToHome = () => {
-  console.log('Navigating home, role is:', userRole.value); // Debug log
+  console.log('Navigating home, role is:', props.userRole); // Debug log
   
   // Adjust these to match your actual roles and routes
-  switch (userRole.value) {
-    case 'admin':
-      router.push('/adminhome');
-      break;
-    case 'caregiver':
-      router.push('/caregiverhome');
+  switch (props.userRole) {
+    // case 'admin':
+    //   router.push('/adminhome');
+    //   break;
+    case 'volunteer':
+      router.push('/volunteerhome');
       break;
     case 'staff':
       router.push('/staffhome');
       break;
-    case 'user':
+    case 'caregiver':
+    case 'beneficiary':
     default:
       router.push('/userhome');
       break;
@@ -81,6 +80,63 @@ const isHomeActive = computed(() => {
   const homePaths = ['/userhome', '/adminhome', '/caregiverhome', '/staffhome'];
   return homePaths.includes(route.path);
 });
+
+// const goToCalendar = async () => {
+//   console.log('CLICK calendar. role=', props.userRole);
+//   console.log('CURRENT ROUTE BEFORE:', router.currentRoute.value.fullPath);
+
+//   const target = props.userRole === 'staff'
+//     ? { name: 'StaffCalendar' }
+//     : { name: 'ActivityCalendar' };
+
+//   console.log('TARGET:', target);
+
+//   await router.push(target);
+
+//   console.log('CURRENT ROUTE AFTER:', router.currentRoute.value.fullPath);
+// };
+
+// const goToCalendar = () => {
+//   const target = userRole.value === 'staff'
+//     ? { name: 'StaffCalendar' }
+//     : { name: 'ActivityCalendar' };
+
+//   console.log('role:', userRole.value, 'target:', target);
+//   router.push(target).catch(e => console.error('push err:', e));
+// };
+
+// const goToCalendar = () => {
+//   console.log('CLICK calendar. role=', userRole.value);
+
+//   const target = userRole.value === 'staff' ? '/staff/calendar' : '/activitycalendar';
+//   console.log('GOING TO:', target);
+
+//   router.push(target).catch(err => console.error('router.push error:', err));
+// };
+
+const goToCalendar = async () => {
+  // If role not ready yet, you can either block or fetch again.
+  if (!props.userRole) {
+    console.log('Role not loaded yet — try again in a moment');
+    return;
+  }
+
+  router.push(props.userRole === 'staff' ? '/staff/calendar' : '/activitycalendar');
+};
+
+// const calendarRoute = computed(() => {
+//   // staff sees staff calendar, everyone else sees normal calendar
+//   return userRole.value === 'staff' ? '/staff/calendar' : '/activitycalendar';
+// });
+
+// const isCalendarActive = computed(() => {
+//   return ['/activitycalendar', '/staff/calendar'].includes(route.path);
+// });
+
+const isCalendarActive = computed(() => {
+  return ['/activitycalendar', '/staff/calendar'].includes(route.path);
+});
+
 </script>
 
 <style>

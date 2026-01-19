@@ -73,12 +73,12 @@ const router = createRouter({
       component: () => import('../components/StaffHome.vue'),
       meta: { requiresAuth: true, roles: ['staff'] }
     },
-    { 
-      path: '/staff/events', 
-      name: 'StaffEvents',
-      component: () => import('../components/ActivityCalendar.vue'),
-      meta: { requiresAuth: true, roles: ['staff'] }
-    },
+    // { 
+    //   path: '/staff/events', 
+    //   name: 'StaffEvents',
+    //   component: () => import('../components/ActivityCalendar.vue'),
+    //   meta: { requiresAuth: true, roles: ['staff'] }
+    // },
 
     // Events
     {
@@ -93,12 +93,12 @@ const router = createRouter({
       component: () => import('../components/EditEvent.vue'),
       meta: { requiresAuth: true, roles: ['staff'] }
     },
-    {
-      path: '/staff/calendar',
-      name: 'StaffCalendar',  // FIXED: John changed to /StaffCalendar
-      component: () => import('../components/StaffCalendar.vue'), 
-      meta: { public: true }
-    },
+    // {
+    //   path: '/staff/calendar',
+    //   name: 'StaffCalendar',  // FIXED: John changed to /StaffCalendar
+    //   component: () => import('../components/StaffCalendar.vue'), 
+    //   meta: { public: true }
+    // },
     
     // Shared Routes
     {
